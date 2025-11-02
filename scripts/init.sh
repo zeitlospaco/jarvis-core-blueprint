@@ -9,7 +9,7 @@ echo "🚀 Jarvis Core: Initialisierung gestartet"
 # - Führe healthcheck aus
 # - Importiere initiale Workflows falls vorhanden
 
-SCRIPT_DIR="$(cd ""$(dirname "${BASH_SOURCE[0]}")" && pwd)"
+SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
 
 # 1) Healthcheck
 if /bin/bash "$SCRIPT_DIR/healthcheck.sh"; then

@@ -2,7 +2,6 @@
 # healthcheck.sh - prüft n8n, Postgres und notwendige API-Keys
 set -euo pipefail
 
-SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
 TIMESTAMP="$(date --iso-8601=seconds || date +%Y-%m-%dT%H:%M:%S)"
 
 log() { echo "[$TIMESTAMP] $*"; }
