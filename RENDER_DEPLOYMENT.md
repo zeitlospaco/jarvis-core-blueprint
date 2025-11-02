@@ -61,6 +61,8 @@ For full functionality, provide:
 - **SUPABASE_URL**: Your Supabase project URL (e.g., `https://xxxxx.supabase.co`)
 - **SUPABASE_ANON_KEY**: Supabase anonymous key
 - **SUPABASE_SERVICE_KEY**: Supabase service role key (keep secret!)
+  - **Note**: In Supabase dashboard, this is labeled as `service_role` key
+  - Previous versions used `SUPABASE_SERVICE_ROLE` - both names work, but `SUPABASE_SERVICE_KEY` is recommended
 - **OPENAI_API_KEY**: OpenAI API key for AI workflows
 - **ANTHROPIC_API_KEY**: Anthropic/Claude API key
 - **SMTP_HOST**: SMTP server for email notifications

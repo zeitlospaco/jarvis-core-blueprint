@@ -34,7 +34,9 @@ Configure these for full functionality:
 |----------|-------------|---------------|
 | `SUPABASE_URL` | Supabase project URL | Project Settings → API → URL |
 | `SUPABASE_ANON_KEY` | Anonymous/public key | Project Settings → API → anon public |
-| `SUPABASE_SERVICE_KEY` | Service role key (secret!) | Project Settings → API → service_role |
+| `SUPABASE_SERVICE_KEY` | Service role key (secret!) | Project Settings → API → service_role (labeled as "service_role" in dashboard) |
+
+**Note**: The environment variable is named `SUPABASE_SERVICE_KEY`, but in the Supabase dashboard it's shown as the "service_role" key. Use the actual key value from the dashboard.
 
 ### AI/LLM Services
 
