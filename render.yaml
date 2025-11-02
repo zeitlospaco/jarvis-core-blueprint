@@ -12,9 +12,6 @@ services:
     autoDeploy: true
     plan: standard
 
-    # Start the n8n process explicitly
-    startCommand: "n8n start"
-
     # Persistent disk for n8n data (workflows, credentials)
     disk:
       name: n8n-data
@@ -29,19 +26,19 @@ services:
       - key: N8N_PROTOCOL
         value: https
       - key: WEBHOOK_URL
-        sync: false
+        generateValue: true
       - key: N8N_EDITOR_BASE_URL
-        sync: false
+        generateValue: true
 
       # Authentication / encryption
       - key: N8N_BASIC_AUTH_ACTIVE
-        value: true
+        value: "true"
       - key: N8N_BASIC_AUTH_USER
-        sync: false
+        generateValue: true
       - key: N8N_BASIC_AUTH_PASSWORD
-        sync: false
+        generateValue: true
       - key: N8N_ENCRYPTION_KEY
-        sync: false
+        generateValue: true
 
       # Database / Supabase
       - key: DB_TYPE
@@ -69,37 +66,37 @@ services:
 
       # Supabase variables (explicit names requested)
       - key: SUPABASE_DB_HOST
-        sync: false
-      - key: SUPABASE_SERVICE_ROLE
-        sync: false
+        generateValue: true
+      - key: SUPABASE_SERVICE_KEY
+        generateValue: true
       - key: SUPABASE_URL
-        sync: false
+        generateValue: true
       - key: SUPABASE_ANON_KEY
-        sync: false
+        generateValue: true
 
       # AI / external keys
       - key: OPENAI_API_KEY
-        sync: false
+        generateValue: true
       - key: ANTHROPIC_API_KEY
-        sync: false
+        generateValue: true
       - key: PINECONE_API_KEY
-        sync: false
+        generateValue: true
       - key: PINECONE_ENV
         value: us-east1-gcp
 
       # Other envs
       - key: LANGCHAIN_API_KEY
-        sync: false
+        generateValue: true
       - key: SMTP_HOST
-        sync: false
+        generateValue: true
       - key: SMTP_PORT
         value: 587
       - key: SMTP_USER
-        sync: false
+        generateValue: true
       - key: SMTP_PASSWORD
-        sync: false
+        generateValue: true
       - key: SMTP_FROM_EMAIL
-        sync: false
+        generateValue: true
 
 
 databases:
