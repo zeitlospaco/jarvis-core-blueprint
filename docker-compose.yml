@@ -1,0 +1,318 @@
+# Docker Compose Configuration for Jarvis Core Blueprint
+# Services: n8n, PostgreSQL, Traefik (Reverse Proxy), Watchtower (Auto-updates)
+# Version: 3.8
+
+version: '3.8'
+
+# Define shared networks
+networks:
+  # Frontend network for Traefik and web services
+  traefik_public:
+    driver: bridge
+  # Backend network for internal service communication
+  backend:
+    driver: bridge
+
+# Define volumes for data persistence
+volumes:
+  # PostgreSQL database data
+  postgres_data:
+    driver: local
+  # n8n workflow and configuration data
+  n8n_data:
+    driver: local
+  # Traefik SSL certificates and configuration
+  traefik_certificates:
+    driver: local
+
+services:
+  # ========================================
+  # Traefik - Reverse Proxy & SSL Management
+  # ========================================
+  traefik:
+    image: traefik:v2.10
+    container_name: jarvis-traefik
+    restart: unless-stopped
+    
+    # Security: Run as non-root user
+    security_opt:
+      - no-new-privileges:true
+    
+    networks:
+      - traefik_public
+    
+    ports:
+      # HTTP port
+      - "80:80"
+      # HTTPS port
+      - "443:443"
+      # Traefik dashboard (optional, comment out in production)
+      - "8080:8080"
+    
+    environment:
+      # Cloudflare API for DNS challenge (if using Cloudflare)
+      - CF_API_EMAIL=${CLOUDFLARE_EMAIL}
+      - CF_API_KEY=${CLOUDFLARE_API_KEY}
+    
+    volumes:
+      # Docker socket for container discovery
+      - /var/run/docker.sock:/var/run/docker.sock:ro
+      # Traefik configuration
+      - ./traefik/traefik.yml:/etc/traefik/traefik.yml:ro
+      - ./traefik/dynamic:/etc/traefik/dynamic:ro
+      # SSL certificates storage
+      - traefik_certificates:/letsencrypt
+    
+    command:
+      # Enable Docker provider
+      - --providers.docker=true
+      - --providers.docker.network=traefik_public
+      - --providers.docker.exposedbydefault=false
+      # Entry points
+      - --entrypoints.web.address=:80
+      - --entrypoints.websecure.address=:443
+      # Redirect HTTP to HTTPS
+      - --entrypoints.web.http.redirections.entrypoint.to=websecure
+      - --entrypoints.web.http.redirections.entrypoint.scheme=https
+      # Let's Encrypt SSL certificates
+      - --certificatesresolvers.letsencrypt.acme.email=${ACME_EMAIL}
+      - --certificatesresolvers.letsencrypt.acme.storage=/letsencrypt/acme.json
+      - --certificatesresolvers.letsencrypt.acme.httpchallenge.entrypoint=web
+      # Enable dashboard (disable in production)
+      - --api.dashboard=true
+      - --api.insecure=true
+      # Logging
+      - --log.level=INFO
+      - --accesslog=true
+    
+    labels:
+      # Traefik dashboard routing (optional)
+      - "traefik.enable=true"
+      - "traefik.http.routers.traefik.rule=Host(`traefik.${DOMAIN}`)"
+      - "traefik.http.routers.traefik.entrypoints=websecure"
+      - "traefik.http.routers.traefik.tls.certresolver=letsencrypt"
+      - "traefik.http.routers.traefik.service=api@internal"
+      # Basic authentication for dashboard
+      - "traefik.http.routers.traefik.middlewares=traefik-auth"
+      - "traefik.http.middlewares.traefik-auth.basicauth.users=${TRAEFIK_BASIC_AUTH}"
+
+  # ========================================
+  # PostgreSQL - Database for n8n
+  # ========================================
+  postgres:
+    image: postgres:15-alpine
+    container_name: jarvis-postgres
+    restart: unless-stopped
+    
+    networks:
+      - backend
+    
+    environment:
+      # PostgreSQL configuration
+      POSTGRES_DB: ${POSTGRES_DB:-n8n}
+      POSTGRES_USER: ${POSTGRES_USER:-n8n_user}
+      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD}
+      # Performance tuning
+      POSTGRES_MAX_CONNECTIONS: 100
+      POSTGRES_SHARED_BUFFERS: 256MB
+    
+    volumes:
+      # Persistent database storage
+      - postgres_data:/var/lib/postgresql/data
+      # Custom initialization scripts (optional)
+      - ./postgres/init:/docker-entrypoint-initdb.d:ro
+    
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U ${POSTGRES_USER:-n8n_user} -d ${POSTGRES_DB:-n8n}"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+    
+    # Resource limits
+    deploy:
+      resources:
+        limits:
+          memory: 1G
+        reservations:
+          memory: 512M
+
+  # ========================================
+  # n8n - Workflow Automation Platform
+  # ========================================
+  n8n:
+    build:
+      context: .
+      dockerfile: Dockerfile
+    container_name: jarvis-n8n
+    restart: unless-stopped
+    
+    networks:
+      - traefik_public
+      - backend
+    
+    # Depends on PostgreSQL being ready
+    depends_on:
+      postgres:
+        condition: service_healthy
+    
+    environment:
+      # === n8n Core Configuration ===
+      - N8N_HOST=${N8N_HOST:-0.0.0.0}
+      - N8N_PORT=5678
+      - N8N_PROTOCOL=https
+      - N8N_EDITOR_BASE_URL=https://n8n.${DOMAIN}
+      - WEBHOOK_URL=https://n8n.${DOMAIN}
+      
+      # === Authentication ===
+      - N8N_BASIC_AUTH_ACTIVE=true
+      - N8N_BASIC_AUTH_USER=${N8N_BASIC_AUTH_USER}
+      - N8N_BASIC_AUTH_PASSWORD=${N8N_BASIC_AUTH_PASSWORD}
+      - N8N_ENCRYPTION_KEY=${N8N_ENCRYPTION_KEY}
+      
+      # === Database Configuration ===
+      - DB_TYPE=postgresdb
+      - DB_POSTGRESDB_HOST=postgres
+      - DB_POSTGRESDB_PORT=5432
+      - DB_POSTGRESDB_DATABASE=${POSTGRES_DB:-n8n}
+      - DB_POSTGRESDB_USER=${POSTGRES_USER:-n8n_user}
+      - DB_POSTGRESDB_PASSWORD=${POSTGRES_PASSWORD}
+      
+      # === Execution Settings ===
+      - EXECUTIONS_DATA_SAVE_ON_ERROR=all
+      - EXECUTIONS_DATA_SAVE_ON_SUCCESS=all
+      - EXECUTIONS_DATA_SAVE_MANUAL_EXECUTIONS=true
+      - EXECUTIONS_PROCESS=main
+      - EXECUTIONS_MODE=regular
+      
+      # === Timezone ===
+      - GENERIC_TIMEZONE=Europe/Berlin
+      - TZ=Europe/Berlin
+      
+      # === Node.js Configuration ===
+      - NODE_ENV=production
+      - NODE_OPTIONS=--max-old-space-size=2048
+      
+      # === Supabase Integration ===
+      - SUPABASE_URL=${SUPABASE_URL}
+      - SUPABASE_ANON_KEY=${SUPABASE_ANON_KEY}
+      - SUPABASE_SERVICE_KEY=${SUPABASE_SERVICE_KEY}
+      
+      # === External API Keys ===
+      - OPENAI_API_KEY=${OPENAI_API_KEY}
+      - ANTHROPIC_API_KEY=${ANTHROPIC_API_KEY}
+      - GOOGLE_API_KEY=${GOOGLE_API_KEY}
+      - SLACK_BOT_TOKEN=${SLACK_BOT_TOKEN}
+      - SLACK_SIGNING_SECRET=${SLACK_SIGNING_SECRET}
+      - TELEGRAM_BOT_TOKEN=${TELEGRAM_BOT_TOKEN}
+      
+      # === Email Configuration ===
+      - SMTP_HOST=${SMTP_HOST}
+      - SMTP_PORT=${SMTP_PORT:-587}
+      - SMTP_USER=${SMTP_USER}
+      - SMTP_PASSWORD=${SMTP_PASSWORD}
+      - SMTP_FROM_EMAIL=${SMTP_FROM_EMAIL}
+      
+      # === LangChain Configuration ===
+      - LANGCHAIN_API_KEY=${LANGCHAIN_API_KEY}
+      - LANGCHAIN_TRACING_V2=true
+      - LANGCHAIN_ENDPOINT=https://api.smith.langchain.com
+      
+      # === CrewAI Configuration ===
+      - CREWAI_TELEMETRY=false
+    
+    volumes:
+      # Persistent n8n data (workflows, credentials, settings)
+      - n8n_data:/home/node/.n8n
+      # Custom Python scripts and extensions
+      - ./n8n/custom:/home/node/.n8n/custom:ro
+    
+    labels:
+      # Enable Traefik
+      - "traefik.enable=true"
+      
+      # HTTP Router
+      - "traefik.http.routers.n8n.rule=Host(`n8n.${DOMAIN}`)"
+      - "traefik.http.routers.n8n.entrypoints=websecure"
+      - "traefik.http.routers.n8n.tls.certresolver=letsencrypt"
+      
+      # Service configuration
+      - "traefik.http.services.n8n.loadbalancer.server.port=5678"
+      
+      # Security headers middleware
+      - "traefik.http.routers.n8n.middlewares=n8n-headers"
+      - "traefik.http.middlewares.n8n-headers.headers.customFrameOptionsValue=SAMEORIGIN"
+      - "traefik.http.middlewares.n8n-headers.headers.customResponseHeaders.X-Robots-Tag=noindex,nofollow"
+      
+      # Watchtower auto-update
+      - "com.centurylinklabs.watchtower.enable=true"
+    
+    healthcheck:
+      test: ["CMD", "wget", "--quiet", "--tries=1", "--spider", "http://localhost:5678/healthz"]
+      interval: 30s
+      timeout: 10s
+      start_period: 60s
+      retries: 3
+    
+    # Resource limits
+    deploy:
+      resources:
+        limits:
+          memory: 2G
+        reservations:
+          memory: 1G
+
+  # ========================================
+  # Watchtower - Automatic Container Updates
+  # ========================================
+  watchtower:
+    image: containrrr/watchtower:latest
+    container_name: jarvis-watchtower
+    restart: unless-stopped
+    
+    volumes:
+      # Docker socket for container management
+      - /var/run/docker.sock:/var/run/docker.sock
+    
+    environment:
+      # Update check interval (seconds)
+      - WATCHTOWER_POLL_INTERVAL=86400
+      # Clean up old images after update
+      - WATCHTOWER_CLEANUP=true
+      # Include stopped containers
+      - WATCHTOWER_INCLUDE_STOPPED=false
+      # Only update containers with watchtower label
+      - WATCHTOWER_LABEL_ENABLE=true
+      # Notification settings (optional)
+      - WATCHTOWER_NOTIFICATIONS=email
+      - WATCHTOWER_NOTIFICATION_EMAIL_FROM=${WATCHTOWER_EMAIL_FROM}
+      - WATCHTOWER_NOTIFICATION_EMAIL_TO=${WATCHTOWER_EMAIL_TO}
+      - WATCHTOWER_NOTIFICATION_EMAIL_SERVER=${SMTP_HOST}
+      - WATCHTOWER_NOTIFICATION_EMAIL_SERVER_PORT=${SMTP_PORT:-587}
+      - WATCHTOWER_NOTIFICATION_EMAIL_SERVER_USER=${SMTP_USER}
+      - WATCHTOWER_NOTIFICATION_EMAIL_SERVER_PASSWORD=${SMTP_PASSWORD}
+      # Schedule (cron format) - daily at 3 AM
+      - WATCHTOWER_SCHEDULE=0 0 3 * * *
+      # Timezone
+      - TZ=Europe/Berlin
+    
+    labels:
+      - "traefik.enable=false"
+
+  # ========================================
+  # Optional: Redis for n8n Queue Mode
+  # ========================================
+  # Uncomment to enable Redis for queue mode and caching
+  # redis:
+  #   image: redis:7-alpine
+  #   container_name: jarvis-redis
+  #   restart: unless-stopped
+  #   networks:
+  #     - backend
+  #   command: redis-server --appendonly yes --requirepass ${REDIS_PASSWORD}
+  #   volumes:
+  #     - redis_data:/data
+  #   healthcheck:
+  #     test: ["CMD", "redis-cli", "ping"]
+  #     interval: 10s
+  #     timeout: 5s
+  #     retries: 5

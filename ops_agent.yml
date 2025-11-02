@@ -1,0 +1,462 @@
+# ========================================
+# Operations Agent Configuration
+# ========================================
+# Automated health checks, monitoring, logging, and alerting
+# This configuration is used by monitoring tools and cron jobs
+# ========================================
+
+# General Configuration
+agent:
+  name: jarvis-ops-agent
+  version: 1.0.0
+  timezone: Europe/Berlin
+  
+  # Service identification
+  service:
+    name: jarvis-n8n
+    environment: production
+    region: eu-central-1
+
+# ========================================
+# Health Check Configuration
+# ========================================
+healthcheck:
+  # Enable health checks
+  enabled: true
+  
+  # Check interval (daily at 9 AM, 3 PM, 9 PM)
+  schedule:
+    - cron: "0 9 * * *"
+      description: "Morning health check"
+    - cron: "0 15 * * *"
+      description: "Afternoon health check"
+    - cron: "0 21 * * *"
+      description: "Evening health check"
+  
+  # Endpoints to check
+  endpoints:
+    # n8n main application
+    - name: n8n-web
+      url: "${N8N_URL}/healthz"
+      method: GET
+      timeout: 10
+      expected_status: 200
+      critical: true
+      
+    # n8n API endpoint
+    - name: n8n-api
+      url: "${N8N_URL}/api/v1/health"
+      method: GET
+      timeout: 10
+      expected_status: 200
+      critical: true
+      headers:
+        Authorization: "Basic ${N8N_AUTH_TOKEN}"
+    
+    # PostgreSQL database
+    - name: postgres
+      type: database
+      host: "${DB_HOST}"
+      port: 5432
+      database: "${DB_NAME}"
+      timeout: 5
+      critical: true
+      
+    # Supabase connection
+    - name: supabase
+      url: "${SUPABASE_URL}/rest/v1/"
+      method: GET
+      timeout: 10
+      expected_status: 200
+      critical: false
+      headers:
+        apikey: "${SUPABASE_ANON_KEY}"
+  
+  # Response time thresholds (milliseconds)
+  thresholds:
+    warning: 1000
+    critical: 3000
+  
+  # Retry configuration
+  retry:
+    attempts: 3
+    delay: 5
+    backoff: exponential
+
+# ========================================
+# Supabase Logging Configuration
+# ========================================
+logging:
+  # Enable structured logging to Supabase
+  enabled: true
+  
+  # Supabase configuration
+  supabase:
+    url: "${SUPABASE_URL}"
+    service_key: "${SUPABASE_SERVICE_KEY}"
+    table: "ops_logs"
+    
+  # Log levels to capture
+  levels:
+    - error
+    - warn
+    - info
+    - debug
+  
+  # Log retention (days)
+  retention:
+    error: 90
+    warn: 60
+    info: 30
+    debug: 7
+  
+  # What to log
+  capture:
+    # Application logs
+    - type: application
+      sources:
+        - n8n
+        - docker
+        - system
+      
+    # Health check results
+    - type: healthcheck
+      include_success: false
+      include_failures: true
+      
+    # Performance metrics
+    - type: metrics
+      interval: 300
+      metrics:
+        - cpu_usage
+        - memory_usage
+        - disk_usage
+        - network_io
+        - response_time
+        
+    # Security events
+    - type: security
+      events:
+        - failed_login_attempts
+        - api_key_usage
+        - unauthorized_access
+        - ssl_certificate_expiry
+        
+    # Workflow executions
+    - type: workflow
+      events:
+        - execution_started
+        - execution_completed
+        - execution_failed
+        - execution_timeout
+  
+  # Structured log format
+  format:
+    timestamp: iso8601
+    level: string
+    service: string
+    message: string
+    context: object
+    trace_id: uuid
+    
+  # Batch configuration for performance
+  batch:
+    size: 100
+    timeout: 30
+
+# ========================================
+# SMTP Alert Configuration
+# ========================================
+alerts:
+  # Enable email alerts
+  enabled: true
+  
+  # SMTP configuration
+  smtp:
+    host: "${SMTP_HOST}"
+    port: "${SMTP_PORT}"
+    secure: true
+    auth:
+      user: "${SMTP_USER}"
+      password: "${SMTP_PASSWORD}"
+    
+    # Email settings
+    from:
+      address: "${SMTP_FROM_EMAIL}"
+      name: "Jarvis Ops Agent"
+    
+    # Alert recipients
+    to:
+      # Critical alerts
+      critical:
+        - "${ADMIN_EMAIL}"
+        - "${OPS_EMAIL}"
+      # Warning alerts
+      warning:
+        - "${ADMIN_EMAIL}"
+      # Info alerts (optional)
+      info: []
+  
+  # Alert rules
+  rules:
+    # Service down
+    - name: service_down
+      severity: critical
+      condition: "healthcheck.status == 'failed' AND healthcheck.critical == true"
+      cooldown: 300
+      template: |
+        Subject: [CRITICAL] ${service.name} is DOWN
+        
+        Service: ${service.name}
+        Environment: ${service.environment}
+        Region: ${service.region}
+        
+        Health Check Failed:
+        - Endpoint: ${healthcheck.endpoint}
+        - Error: ${healthcheck.error}
+        - Time: ${timestamp}
+        
+        Action Required: Immediate investigation needed.
+        
+        Dashboard: ${dashboard_url}
+    
+    # High response time
+    - name: high_response_time
+      severity: warning
+      condition: "healthcheck.response_time > thresholds.warning"
+      cooldown: 600
+      template: |
+        Subject: [WARNING] High Response Time for ${service.name}
+        
+        Service: ${service.name}
+        Response Time: ${healthcheck.response_time}ms
+        Threshold: ${thresholds.warning}ms
+        
+        This may indicate performance issues.
+    
+    # Database connection issues
+    - name: database_connection_failed
+      severity: critical
+      condition: "healthcheck.name == 'postgres' AND healthcheck.status == 'failed'"
+      cooldown: 300
+      template: |
+        Subject: [CRITICAL] Database Connection Failed
+        
+        Database connection to PostgreSQL has failed.
+        
+        Details:
+        - Host: ${DB_HOST}
+        - Database: ${DB_NAME}
+        - Error: ${healthcheck.error}
+        
+        Workflows may be affected.
+    
+    # SSL certificate expiring
+    - name: ssl_expiring
+      severity: warning
+      condition: "ssl.days_until_expiry < 30"
+      cooldown: 86400
+      template: |
+        Subject: [WARNING] SSL Certificate Expiring Soon
+        
+        SSL certificate will expire in ${ssl.days_until_expiry} days.
+        
+        Domain: ${ssl.domain}
+        Expiry Date: ${ssl.expiry_date}
+        
+        Please renew the certificate.
+    
+    # High CPU usage
+    - name: high_cpu_usage
+      severity: warning
+      condition: "metrics.cpu_usage > 80"
+      cooldown: 1800
+      template: |
+        Subject: [WARNING] High CPU Usage
+        
+        CPU usage is at ${metrics.cpu_usage}%
+        
+        This may affect performance.
+    
+    # High memory usage
+    - name: high_memory_usage
+      severity: warning
+      condition: "metrics.memory_usage > 85"
+      cooldown: 1800
+      template: |
+        Subject: [WARNING] High Memory Usage
+        
+        Memory usage is at ${metrics.memory_usage}%
+        
+        Consider scaling up resources.
+    
+    # Disk space low
+    - name: low_disk_space
+      severity: critical
+      condition: "metrics.disk_usage > 90"
+      cooldown: 3600
+      template: |
+        Subject: [CRITICAL] Low Disk Space
+        
+        Disk usage is at ${metrics.disk_usage}%
+        
+        Immediate action required to free up space.
+    
+    # Workflow execution failed
+    - name: workflow_failed
+      severity: warning
+      condition: "workflow.status == 'failed'"
+      cooldown: 0
+      template: |
+        Subject: [WARNING] Workflow Execution Failed
+        
+        Workflow: ${workflow.name}
+        Workflow ID: ${workflow.id}
+        Execution ID: ${workflow.execution_id}
+        Error: ${workflow.error}
+        
+        Time: ${timestamp}
+        
+        Review: ${workflow.url}
+  
+  # Alert aggregation (prevent alert spam)
+  aggregation:
+    enabled: true
+    window: 300
+    max_alerts: 5
+    summary_template: |
+      Subject: [ALERT SUMMARY] ${alert_count} alerts in the last ${window} seconds
+      
+      Multiple alerts have been triggered:
+      ${alert_list}
+
+# ========================================
+# Backup Monitoring
+# ========================================
+backup:
+  # Monitor backup status
+  enabled: true
+  
+  # Expected backup schedule
+  schedule:
+    - cron: "0 2 * * *"
+      description: "Daily database backup"
+      timeout: 3600
+      
+  # Backup verification
+  verify:
+    enabled: true
+    max_age: 86400
+    
+  # Alert if backup fails or is missing
+  alert_on_failure: true
+  
+  # Backup locations to check
+  locations:
+    - type: s3
+      bucket: "${BACKUP_S3_BUCKET}"
+      prefix: "jarvis-backups/"
+      
+    - type: local
+      path: "/data/backups"
+
+# ========================================
+# Performance Metrics Collection
+# ========================================
+metrics:
+  # Enable metrics collection
+  enabled: true
+  
+  # Collection interval (seconds)
+  interval: 60
+  
+  # Metrics to collect
+  collect:
+    # System metrics
+    - name: cpu_usage
+      type: percentage
+      
+    - name: memory_usage
+      type: percentage
+      
+    - name: disk_usage
+      type: percentage
+      
+    - name: network_io
+      type: bytes
+      
+    # Application metrics
+    - name: active_workflows
+      type: count
+      
+    - name: workflow_executions_per_minute
+      type: rate
+      
+    - name: failed_executions
+      type: count
+      
+    - name: average_execution_time
+      type: milliseconds
+      
+    - name: database_connections
+      type: count
+      
+    - name: api_requests_per_minute
+      type: rate
+      
+  # Store metrics in Supabase
+  storage:
+    type: supabase
+    table: "ops_metrics"
+    retention: 30
+
+# ========================================
+# Maintenance Windows
+# ========================================
+maintenance:
+  # Scheduled maintenance windows (suppress alerts)
+  windows:
+    - name: weekly_maintenance
+      schedule: "0 3 * * 0"
+      duration: 7200
+      description: "Weekly maintenance window"
+      
+  # Alert recipients about upcoming maintenance
+  notify_before: 3600
+
+# ========================================
+# Integration Configuration
+# ========================================
+integrations:
+  # Slack notifications (optional)
+  slack:
+    enabled: false
+    webhook_url: "${SLACK_WEBHOOK_URL}"
+    channel: "#ops-alerts"
+    
+  # PagerDuty (optional)
+  pagerduty:
+    enabled: false
+    api_key: "${PAGERDUTY_API_KEY}"
+    service_key: "${PAGERDUTY_SERVICE_KEY}"
+    
+  # Datadog (optional)
+  datadog:
+    enabled: false
+    api_key: "${DATADOG_API_KEY}"
+    app_key: "${DATADOG_APP_KEY}"
+
+# ========================================
+# Notes
+# ========================================
+# This configuration file is used by:
+# 1. Cron jobs for scheduled health checks
+# 2. Logging agents for structured logging to Supabase
+# 3. Alert managers for SMTP notifications
+# 4. Monitoring dashboards for metrics visualization
+#
+# To use this configuration:
+# 1. Set all environment variables in .env file
+# 2. Install required monitoring tools
+# 3. Set up cron jobs for scheduled tasks
+# 4. Configure Supabase tables for logs and metrics
