@@ -1,0 +1,93 @@
+# .gitignore for Jarvis Core Blueprint
+
+# Environment files (IMPORTANT: never commit credentials)
+.env
+.env.*
+!.env.example
+
+# Backup files
+backups/
+*.sql
+*.sql.gz
+*.tar.gz
+*.backup
+
+# Docker volumes and data
+data/
+volumes/
+
+# Traefik certificates and logs
+traefik/letsencrypt/
+traefik/*.log
+letsencrypt/
+acme.json
+
+# PostgreSQL data
+postgres/data/
+pgdata/
+
+# n8n data
+n8n/data/
+.n8n/
+
+# Logs
+logs/
+*.log
+
+# Temporary files
+tmp/
+temp/
+*.tmp
+*.swp
+*.swo
+
+# IDE and editor files
+.vscode/
+.idea/
+*.sublime-*
+.DS_Store
+Thumbs.db
+
+# OS files
+.DS_Store
+.DS_Store?
+._*
+.Spotlight-V100
+.Trashes
+ehthumbs.db
+Desktop.ini
+
+# Python
+__pycache__/
+*.py[cod]
+*$py.class
+*.so
+.Python
+venv/
+env/
+ENV/
+*.egg-info/
+dist/
+build/
+
+# Node
+node_modules/
+npm-debug.log*
+yarn-debug.log*
+yarn-error.log*
+
+# Secrets and keys
+*.pem
+*.key
+*.crt
+*.p12
+secrets/
+
+# Testing
+.coverage
+htmlcov/
+.pytest_cache/
+
+# Documentation builds
+site/
+_build/
