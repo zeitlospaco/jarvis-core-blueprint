@@ -13,6 +13,7 @@ fi
 BACKUP_DIR="${BACKUP_DIR:-/data/backups/n8n}"
 TIMESTAMP=$(date +%Y%m%d_%H%M%S)
 RETENTION_DAYS="${BACKUP_RETENTION_DAYS:-30}"
+N8N_CONTAINER="${N8N_CONTAINER:-jarvis-n8n}"
 
 # Create backup directory
 mkdir -p "$BACKUP_DIR"
@@ -24,7 +25,7 @@ docker-compose exec -T n8n n8n export:workflow --all --output=/tmp/workflows_$TI
 
 if [ $? -eq 0 ]; then
     # Copy from container to host
-    docker cp jarvis-n8n:/tmp/workflows_$TIMESTAMP.json "$BACKUP_DIR/"
+    docker cp "$N8N_CONTAINER:/tmp/workflows_$TIMESTAMP.json" "$BACKUP_DIR/"
     
     # Compress
     gzip "$BACKUP_DIR/workflows_$TIMESTAMP.json"
@@ -37,7 +38,7 @@ fi
 
 # Backup n8n data directory (optional - contains encrypted credentials)
 echo "[$(date)] Backing up n8n data directory..."
-docker cp jarvis-n8n:/home/node/.n8n "$BACKUP_DIR/n8n_data_$TIMESTAMP"
+docker cp "$N8N_CONTAINER:/home/node/.n8n" "$BACKUP_DIR/n8n_data_$TIMESTAMP"
 tar -czf "$BACKUP_DIR/n8n_data_$TIMESTAMP.tar.gz" -C "$BACKUP_DIR" "n8n_data_$TIMESTAMP"
 rm -rf "$BACKUP_DIR/n8n_data_$TIMESTAMP"
 

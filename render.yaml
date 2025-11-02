@@ -37,10 +37,12 @@ services:
       # Webhook URL for n8n workflows
       - key: WEBHOOK_URL
         sync: false
+        # Set to: https://n8n-<your-service-name>.onrender.com
       
       # n8n Editor Base URL
       - key: N8N_EDITOR_BASE_URL
         sync: false
+        # Set to: https://n8n-<your-service-name>.onrender.com
       
       # === Authentication Configuration ===
       # Basic authentication for n8n UI
@@ -49,9 +51,11 @@ services:
       
       - key: N8N_BASIC_AUTH_USER
         sync: false
+        # Set your admin username
       
       - key: N8N_BASIC_AUTH_PASSWORD
         sync: false
+        # Set a strong password
       
       # Encryption key for credentials
       - key: N8N_ENCRYPTION_KEY

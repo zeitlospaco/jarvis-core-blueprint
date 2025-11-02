@@ -25,9 +25,6 @@ entryPoints:
   # HTTPS entry point
   websecure:
     address: ":443"
-    http:
-      tls:
-        certResolver: letsencrypt
 
 # Docker provider
 providers:

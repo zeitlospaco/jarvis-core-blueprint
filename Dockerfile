@@ -44,13 +44,13 @@ RUN pip install --no-cache-dir --upgrade \
     wheel
 
 # Install Python AI Frameworks and Dependencies
-# LangChain: Framework for LLM applications
+# LangChain: Framework for LLM applications (using stable versions)
 RUN pip install --no-cache-dir \
-    langchain==0.1.0 \
-    langchain-community==0.0.10 \
-    langchain-core==0.1.10 \
-    langchain-openai==0.0.2 \
-    langchain-anthropic==0.0.1
+    langchain==0.1.20 \
+    langchain-community==0.0.38 \
+    langchain-core==0.1.52 \
+    langchain-openai==0.1.7 \
+    langchain-anthropic==0.1.11
 
 # CrewAI: Multi-agent AI framework
 RUN pip install --no-cache-dir \
