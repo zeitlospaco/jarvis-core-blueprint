@@ -1,193 +1,110 @@
 # Render.com Blueprint Configuration for n8n Service
-# This file defines the infrastructure deployment on Render.com platform
 # Region: Frankfurt (eu-central)
 # HTTPS: Automatically enabled for all services
 
 services:
-  # n8n Workflow Automation Service
   - type: web
     name: jarvis-n8n
     env: docker
-    # Region: Frankfurt for EU GDPR compliance
     region: frankfurt
-    # Use the Dockerfile in the repository root
     dockerfilePath: ./Dockerfile
-    # Health check endpoint for monitoring
     healthCheckPath: /healthz
-    
-    # Auto-deploy configuration
     autoDeploy: true
-    
-    # Service plan configuration
     plan: standard
-    
-    # Environment Variables Configuration
+
+    # Start the n8n process explicitly
+    startCommand: "n8n start"
+
+    # Persistent disk for n8n data (workflows, credentials)
+    disk:
+      name: n8n-data
+      mountPath: /home/node/.n8n
+      sizeGB: 10
+
     envVars:
-      # === n8n Core Configuration ===
-      # n8n application URL (HTTPS automatically provided by Render)
       - key: N8N_HOST
         value: 0.0.0.0
-      
       - key: N8N_PORT
         value: 5678
-      
       - key: N8N_PROTOCOL
         value: https
-      
-      # Webhook URL for n8n workflows
       - key: WEBHOOK_URL
         sync: false
-        # Set to: https://n8n-<your-service-name>.onrender.com
-      
-      # n8n Editor Base URL
       - key: N8N_EDITOR_BASE_URL
         sync: false
-        # Set to: https://n8n-<your-service-name>.onrender.com
-      
-      # === Authentication Configuration ===
-      # Basic authentication for n8n UI
+
+      # Authentication / encryption
       - key: N8N_BASIC_AUTH_ACTIVE
         value: true
-      
       - key: N8N_BASIC_AUTH_USER
         sync: false
-        # Set your admin username
-      
       - key: N8N_BASIC_AUTH_PASSWORD
         sync: false
-        # Set a strong password
-      
-      # Encryption key for credentials
       - key: N8N_ENCRYPTION_KEY
-        generateValue: true
-      
-      # === Database Configuration (PostgreSQL) ===
+        sync: false
+
+      # Database / Supabase
       - key: DB_TYPE
         value: postgresdb
-      
       - key: DB_POSTGRESDB_HOST
         fromDatabase:
           name: jarvis-postgres
           property: host
-      
       - key: DB_POSTGRESDB_PORT
         fromDatabase:
           name: jarvis-postgres
           property: port
-      
       - key: DB_POSTGRESDB_DATABASE
         fromDatabase:
           name: jarvis-postgres
           property: database
-      
       - key: DB_POSTGRESDB_USER
         fromDatabase:
           name: jarvis-postgres
           property: user
-      
       - key: DB_POSTGRESDB_PASSWORD
         fromDatabase:
           name: jarvis-postgres
           property: password
-      
-      # === Supabase Integration ===
-      # Supabase project URL
+
+      # Supabase variables (explicit names requested)
+      - key: SUPABASE_DB_HOST
+        sync: false
+      - key: SUPABASE_SERVICE_ROLE
+        sync: false
       - key: SUPABASE_URL
         sync: false
-      
-      # Supabase anonymous/public key
       - key: SUPABASE_ANON_KEY
         sync: false
-      
-      # Supabase service role key (admin access)
-      - key: SUPABASE_SERVICE_KEY
-        sync: false
-      
-      # === External API Keys ===
-      # OpenAI API for AI integrations
+
+      # AI / external keys
       - key: OPENAI_API_KEY
         sync: false
-      
-      # Anthropic API for Claude AI
       - key: ANTHROPIC_API_KEY
         sync: false
-      
-      # Google API credentials
-      - key: GOOGLE_API_KEY
+      - key: PINECONE_API_KEY
         sync: false
-      
-      # Slack integration
-      - key: SLACK_BOT_TOKEN
-        sync: false
-      
-      - key: SLACK_SIGNING_SECRET
-        sync: false
-      
-      # Telegram Bot integration
-      - key: TELEGRAM_BOT_TOKEN
-        sync: false
-      
-      # Email service (SendGrid/SMTP)
-      - key: SMTP_HOST
-        sync: false
-      
-      - key: SMTP_PORT
-        value: 587
-      
-      - key: SMTP_USER
-        sync: false
-      
-      - key: SMTP_PASSWORD
-        sync: false
-      
-      - key: SMTP_FROM_EMAIL
-        sync: false
-      
-      # === Python/AI Framework Configuration ===
-      # LangChain configuration
+      - key: PINECONE_ENV
+        value: us-east1-gcp
+
+      # Other envs
       - key: LANGCHAIN_API_KEY
         sync: false
-      
-      - key: LANGCHAIN_TRACING_V2
-        value: true
-      
-      - key: LANGCHAIN_ENDPOINT
-        value: https://api.smith.langchain.com
-      
-      # CrewAI configuration
-      - key: CREWAI_TELEMETRY
-        value: false
-      
-      # === Node.js Configuration ===
-      - key: NODE_ENV
-        value: production
-      
-      - key: EXECUTIONS_DATA_SAVE_ON_ERROR
-        value: all
-      
-      - key: EXECUTIONS_DATA_SAVE_ON_SUCCESS
-        value: all
-      
-      - key: EXECUTIONS_DATA_SAVE_MANUAL_EXECUTIONS
-        value: true
-      
-      # === Timezone Configuration ===
-      - key: GENERIC_TIMEZONE
-        value: Europe/Berlin
-      
-      - key: TZ
-        value: Europe/Berlin
+      - key: SMTP_HOST
+        sync: false
+      - key: SMTP_PORT
+        value: 587
+      - key: SMTP_USER
+        sync: false
+      - key: SMTP_PASSWORD
+        sync: false
+      - key: SMTP_FROM_EMAIL
+        sync: false
 
-# PostgreSQL Database Service
+
 databases:
   - name: jarvis-postgres
     databaseName: jarvis_n8n
     user: jarvis_admin
-    # Region: Frankfurt for data locality
     region: frankfurt
-    # PostgreSQL version
     plan: starter
-    # IP whitelist can be configured in Render dashboard
-
-# Cron Jobs for Maintenance
-# Note: Render doesn't support cron jobs in YAML, configure in dashboard or use n8n workflows
