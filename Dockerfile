@@ -3,7 +3,7 @@ FROM n8nio/n8n:latest
 
 LABEL maintainer="jarvis-core-blueprint"
 LABEL description="n8n with Python AI dependencies and optional Node packages"
-LABEL version="1.2.0"
+LABEL version="1.2.1"
 
 USER root
 
@@ -25,13 +25,13 @@ RUN apk update && apk add --no-cache \
 # Create and use a virtual environment to avoid PEP 668 (externally-managed)
 RUN python3 -m venv /opt/venv
 ENV VIRTUAL_ENV=/opt/venv
-ENV PATH="/opt/venv/bin:${PATH}"
+# Ensure n8n in /usr/local/bin remains discoverable
+ENV PATH="/opt/venv/bin:/usr/local/sbin:/usr/local/bin:/usr/sbin:/usr/bin:/sbin:/bin"
 
 # Upgrade pip tooling inside the venv
 RUN python -m pip install --no-cache-dir --upgrade pip setuptools wheel
 
 # Install a minimal, build-friendly Python dependency set
-# (Heavy packages like sentence-transformers/chromadb/pandas/numpy are omitted to ensure Alpine builds succeed.)
 RUN python -m pip install --no-cache-dir \
     langchain \
     openai \
@@ -54,14 +54,13 @@ RUN mkdir -p /home/node/.n8n/custom /data/.n8n \
 USER node
 WORKDIR /home/node
 
-# n8n envs
-ENV N8N_USER_FOLDER=/home/node/.n8n
+# Do NOT override N8N_USER_FOLDER; base image handles it to avoid /.n8n/.n8n
+# Optionally keep custom extensions path if needed:
 ENV N8N_CUSTOM_EXTENSIONS=/home/node/.n8n/custom
 
 EXPOSE 5678
 
-# Use curl for healthcheck (present in image)
 HEALTHCHECK --interval=30s --timeout=10s --start-period=60s --retries=3 \
   CMD curl --fail --silent http://localhost:5678/healthz || exit 1
 
-CMD ["n8n", "start"]
+# Do NOT override CMD; use base image's startup to ensure n8n is found
