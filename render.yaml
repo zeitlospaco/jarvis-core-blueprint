@@ -24,6 +24,7 @@ services:
       - key: N8N_HOST
         fromService:
           name: jarvis-n8n
+          type: web
           property: host
       - key: N8N_PORT
         value: 5678
@@ -31,14 +32,6 @@ services:
         value: https
       - key: N8N_LISTEN_ADDRESS
         value: 0.0.0.0
-      - key: WEBHOOK_URL
-        fromService:
-          name: jarvis-n8n
-          property: url
-      - key: N8N_EDITOR_BASE_URL
-        fromService:
-          name: jarvis-n8n
-          property: url
 
       # Authentication / encryption
       - key: N8N_BASIC_AUTH_ACTIVE
@@ -74,7 +67,7 @@ services:
           name: jarvis-postgres
           property: password
 
-      # Supabase variables (explicit names requested)
+      # Optional external variables (placeholders; can be replaced later)
       - key: SUPABASE_DB_HOST
         generateValue: true
       - key: SUPABASE_SERVICE_KEY
@@ -84,7 +77,6 @@ services:
       - key: SUPABASE_ANON_KEY
         generateValue: true
 
-      # AI / external keys
       - key: OPENAI_API_KEY
         generateValue: true
       - key: ANTHROPIC_API_KEY
@@ -94,7 +86,6 @@ services:
       - key: PINECONE_ENV
         value: us-east1-gcp
 
-      # Other envs
       - key: LANGCHAIN_API_KEY
         generateValue: true
       - key: SMTP_HOST
