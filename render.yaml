@@ -106,4 +106,5 @@ databases:
     databaseName: jarvis_n8n
     user: jarvis_admin
     region: frankfurt
-    plan: Basic-10gb
+    plan: Basic-1gb
+    storageGB: 10
