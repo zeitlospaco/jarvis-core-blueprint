@@ -22,11 +22,15 @@ services:
 
     envVars:
       - key: N8N_HOST
-        value: 0.0.0.0
+        fromService:
+          name: jarvis-n8n
+          property: host
       - key: N8N_PORT
         value: 5678
       - key: N8N_PROTOCOL
         value: https
+      - key: N8N_LISTEN_ADDRESS
+        value: 0.0.0.0
       - key: WEBHOOK_URL
         fromService:
           name: jarvis-n8n
