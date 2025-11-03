@@ -114,71 +114,68 @@ docker-compose logs -f n8n
 
 ## Deploy on Render.com
 
-Render.com provides a managed platform with automatic scaling and global CDN.
+Render.com provides a managed platform with automatic scaling, zero-config SSL, and global CDN.
 
-### Step 1: Prepare Repository
+**👉 [Complete Render Deployment Guide](RENDER_DEPLOYMENT.md)** - Detailed step-by-step instructions
 
-1. Fork this repository to your GitHub account
-2. Configure environment variables in `.env.example`
+### Quick Deploy
 
-### Step 2: Create Render Account
+1. **Fork this repository** to your GitHub account
 
-1. Sign up at [render.com](https://render.com)
-2. Connect your GitHub account
-3. Select your forked repository
+2. **Click to deploy**:
+   
+   [![Deploy to Render](https://render.com/images/deploy-to-render-button.svg)](https://render.com/deploy)
 
-### Step 3: Deploy Using Blueprint
+3. **Configure environment variables** when prompted:
+   - `N8N_BASIC_AUTH_USER` - Your n8n username
+   - `N8N_BASIC_AUTH_PASSWORD` - Secure password
+   - `N8N_ENCRYPTION_KEY` - Generate with: `openssl rand -hex 32`
+   - API keys for integrations (OpenAI, Supabase, etc.)
 
-```bash
-# Option 1: Deploy via Render Dashboard
-# 1. Go to Render Dashboard
-# 2. Click "New +" → "Blueprint"
-# 3. Connect to repository
-# 4. Render reads render.yaml automatically
+4. **Wait for deployment** (~5-10 minutes)
 
-# Option 2: Deploy via CLI
-render deploy
-```
+5. **Access your n8n** at the provided Render URL
 
-### Step 4: Configure Environment Variables
+### What Gets Deployed
 
-In Render Dashboard:
+The `render.yaml` blueprint automatically provisions:
 
-1. Go to your service
-2. Navigate to "Environment" tab
-3. Add required variables from `.env.example`
-4. Set sync=false variables manually:
-   - `N8N_BASIC_AUTH_USER`
-   - `N8N_BASIC_AUTH_PASSWORD`
-   - `SUPABASE_URL`
-   - `SUPABASE_SERVICE_KEY`
-   - `OPENAI_API_KEY`
-   - All other API keys
+- ✅ **n8n Web Service** (Docker-based)
+- ✅ **PostgreSQL Database** (15GB storage)
+- ✅ **10GB Persistent Disk** for workflows and credentials
+- ✅ **Automatic SSL/HTTPS** via Let's Encrypt
+- ✅ **Health Checks** with auto-restart
+- ✅ **Auto-deploy** on git push
 
-### Step 5: Set Custom Domain
+### Configuration
 
-1. Go to "Settings" → "Custom Domain"
+- **Region**: Frankfurt (eu-central) - GDPR compliant
+- **Plan**: Standard ($25/month) + Database Starter ($7/month)
+- **Total Cost**: ~$32/month
+
+### Custom Domain
+
+After deployment:
+
+1. Go to **Settings → Custom Domain**
 2. Add your domain: `n8n.yourdomain.com`
-3. Update DNS records as instructed
-4. HTTPS is automatic via Render
+3. Update DNS: `CNAME n8n.yourdomain.com → your-service.onrender.com`
+4. SSL certificate is automatic
 
-### Render Region Selection
+### Troubleshooting
 
-The `render.yaml` is configured for **Frankfurt (eu-central)** region for GDPR compliance. To change:
+If you see "A render.yaml file was found, but there was an issue":
 
-```yaml
-services:
-  - type: web
-    region: frankfurt  # Change to: oregon, frankfurt, singapore
-```
+1. Ensure you have the latest version of `render.yaml`
+2. Check that all required environment variables are set
+3. Verify your repository is accessible to Render
+4. See [RENDER_DEPLOYMENT.md](RENDER_DEPLOYMENT.md) for detailed troubleshooting
 
-### Render Pricing
+### Need Help?
 
-- **Starter Plan**: $7/month - Good for testing
-- **Standard Plan**: $25/month - Recommended for production
-- **Pro Plan**: $85/month - High availability
-
-Database pricing separate - starts at $7/month.
+- 📖 [Detailed Deployment Guide](RENDER_DEPLOYMENT.md)
+- 💬 [Render Community](https://community.render.com)
+- 🐛 [Report Issues](https://github.com/zeitlospaco/jarvis-core-blueprint/issues)
 
 ## Deploy on Hetzner
 

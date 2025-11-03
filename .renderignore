@@ -1,0 +1,77 @@
+# Exclude development and local files from Render deployment
+
+# Git
+.git
+.gitignore
+.github
+
+# Documentation (not needed in production)
+*.md
+!README.md
+CONTRIBUTING.md
+LICENSE
+
+# Environment files
+.env
+.env.*
+.env.local
+.env.development
+
+# Docker Compose (not used on Render)
+docker-compose.yml
+docker-compose.*.yml
+
+# Traefik config (not used on Render)
+traefik/
+
+# Scripts (not needed in production)
+scripts/
+
+# Operations agent (not used on Render)
+ops_agent.yml
+
+# Node modules (if any)
+node_modules/
+
+# Python cache
+__pycache__/
+*.pyc
+*.pyo
+*.pyd
+.Python
+
+# IDE
+.vscode/
+.idea/
+*.swp
+*.swo
+*~
+
+# OS files
+.DS_Store
+Thumbs.db
+
+# Logs
+*.log
+logs/
+
+# Test files
+tests/
+test/
+*.test.js
+*.spec.js
+
+# Build artifacts
+dist/
+build/
+*.tar.gz
+*.zip
+
+# Database files (local only)
+postgres/
+*.sql
+*.db
+
+# Backups
+backups/
+*.backup
