@@ -1,3 +1,5 @@
+version: "1"
+
 # Render.com Blueprint Configuration for n8n Service
 # Region: Frankfurt (eu-central)
 # HTTPS: Automatically enabled for all services
@@ -5,7 +7,7 @@
 services:
   - type: web
     name: jarvis-n8n
-    env: docker
+    runtime: docker
     region: frankfurt
     dockerfilePath: ./Dockerfile
     healthCheckPath: /healthz
