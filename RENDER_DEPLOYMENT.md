@@ -163,6 +163,15 @@ You can downgrade to the Starter plan ($7/month) for testing, but it has limitat
 
 ## Troubleshooting
 
+### Blueprint YAML Issues
+
+If you see "A render.yaml file was found, but there was an issue":
+
+1. **Ensure you have the latest version**: Make sure your `render.yaml` includes the required `version: "1"` field at the top
+2. **Check runtime field**: The service should use `runtime: docker`, not `env: docker`
+3. **Validate YAML syntax**: Use a YAML validator to check for syntax errors
+4. **Verify repository access**: Ensure Render has access to your GitHub repository
+
 ### Service Won't Start
 
 Check the logs in Render dashboard:
