@@ -12,13 +12,7 @@ services:
     dockerfilePath: ./Dockerfile
     healthCheckPath: /healthz
     autoDeploy: true
-    plan: standard
-
-    # Persistent disk for n8n data (workflows, credentials)
-    disk:
-      name: n8n-data
-      mountPath: /home/node/.n8n
-      sizeGB: 10
+    plan: free
 
     envVars:
       - key: N8N_HOST
@@ -43,7 +37,7 @@ services:
       - key: N8N_ENCRYPTION_KEY
         generateValue: true
 
-      # Database / Supabase
+      # Database
       - key: DB_TYPE
         value: postgresdb
       - key: DB_POSTGRESDB_HOST
@@ -105,5 +99,4 @@ databases:
     databaseName: jarvis_n8n
     user: jarvis_admin
     region: frankfurt
-    plan: Basic-1gb
-    diskSizeGB: 10
+    plan: free
