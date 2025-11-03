@@ -8,7 +8,12 @@ services:
     dockerfilePath: ./Dockerfile
     healthCheckPath: /healthz
     autoDeploy: true
-    plan: free
+    plan: starter
+
+    disk:
+      name: n8n-data
+      mountPath: /home/node/.n8n
+      sizeGB: 1
 
     envVars:
       - key: N8N_HOST
@@ -33,7 +38,7 @@ services:
       - key: N8N_ENCRYPTION_KEY
         generateValue: true
 
-      # Database (use external Supabase connection URL)
+      # Database (external Supabase connection)
       - key: DB_TYPE
         value: postgresdb
       - key: DATABASE_URL
@@ -41,7 +46,7 @@ services:
       - key: DB_POSTGRESDB_CONNECTION_STRING
         value: ${DATABASE_URL}
 
-      # Optional external variables (placeholders; can be replaced later)
+      # Optional placeholders
       - key: SUPABASE_DB_HOST
         generateValue: true
       - key: SUPABASE_SERVICE_KEY
