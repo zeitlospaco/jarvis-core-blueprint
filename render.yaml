@@ -1,9 +1,5 @@
 version: "1"
 
-# Render.com Blueprint Configuration for n8n Service
-# Region: Frankfurt (eu-central)
-# HTTPS: Automatically enabled for all services
-
 services:
   - type: web
     name: jarvis-n8n
@@ -37,29 +33,13 @@ services:
       - key: N8N_ENCRYPTION_KEY
         generateValue: true
 
-      # Database
+      # Database (use external Supabase connection URL)
       - key: DB_TYPE
         value: postgresdb
-      - key: DB_POSTGRESDB_HOST
-        fromDatabase:
-          name: jarvis-postgres
-          property: host
-      - key: DB_POSTGRESDB_PORT
-        fromDatabase:
-          name: jarvis-postgres
-          property: port
-      - key: DB_POSTGRESDB_DATABASE
-        fromDatabase:
-          name: jarvis-postgres
-          property: database
-      - key: DB_POSTGRESDB_USER
-        fromDatabase:
-          name: jarvis-postgres
-          property: user
-      - key: DB_POSTGRESDB_PASSWORD
-        fromDatabase:
-          name: jarvis-postgres
-          property: password
+      - key: DATABASE_URL
+        value: ${SUPABASE_DB_URL}
+      - key: DB_POSTGRESDB_CONNECTION_STRING
+        value: ${DATABASE_URL}
 
       # Optional external variables (placeholders; can be replaced later)
       - key: SUPABASE_DB_HOST
@@ -92,11 +72,3 @@ services:
         generateValue: true
       - key: SMTP_FROM_EMAIL
         generateValue: true
-
-
-databases:
-  - name: jarvis-postgres
-    databaseName: jarvis_n8n
-    user: jarvis_admin
-    region: frankfurt
-    plan: free
