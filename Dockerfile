@@ -3,7 +3,7 @@ FROM n8nio/n8n:latest
 
 LABEL maintainer="jarvis-core-blueprint"
 LABEL description="n8n with Python AI dependencies and optional Node packages"
-LABEL version="1.2.1"
+LABEL version="1.2.2"
 
 USER root
 
@@ -51,11 +51,14 @@ RUN corepack enable \
 RUN mkdir -p /home/node/.n8n/custom /data/.n8n \
  && chown -R node:node /home/node/.n8n /data
 
+# Add a lightweight startup wrapper to map SUPABASE_DB_URL -> DB_POSTGRESDB_CONNECTION_STRING if needed
+RUN printf '#!/usr/bin/env sh\nset -e\nif [ -n "$SUPABASE_DB_URL" ] && [ -z "$DB_POSTGRESDB_CONNECTION_STRING" ]; then\n  export DB_POSTGRESDB_CONNECTION_STRING="$SUPABASE_DB_URL"\nfi\nexec n8n start\n' > /usr/local/bin/start-n8n.sh \
+ && chmod +x /usr/local/bin/start-n8n.sh
+
 USER node
 WORKDIR /home/node
 
-# Do NOT override N8N_USER_FOLDER; base image handles it to avoid /.n8n/.n8n
-# Optionally keep custom extensions path if needed:
+# Keep custom extensions path if needed
 ENV N8N_CUSTOM_EXTENSIONS=/home/node/.n8n/custom
 
 EXPOSE 5678
@@ -63,4 +66,5 @@ EXPOSE 5678
 HEALTHCHECK --interval=30s --timeout=10s --start-period=60s --retries=3 \
   CMD curl --fail --silent http://localhost:5678/healthz || exit 1
 
-# Do NOT override CMD; use base image's startup to ensure n8n is found
+# Use wrapper to ensure DB connection string is set from Supabase variable
+CMD ["/usr/local/bin/start-n8n.sh"]
