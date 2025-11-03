@@ -115,4 +115,4 @@ databases:
     user: jarvis_admin
     region: frankfurt
     plan: Basic-1gb
-    storageGB: 10
+    diskSizeGB: 10
