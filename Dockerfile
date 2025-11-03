@@ -3,14 +3,15 @@ FROM n8nio/n8n:latest
 
 LABEL maintainer="jarvis-core-blueprint"
 LABEL description="n8n with Python AI dependencies and optional Node packages"
-LABEL version="1.1.0"
+LABEL version="1.2.0"
 
 USER root
 
-# Install system packages (Alpine)
+# Install system packages (Alpine) + CA certs
 RUN apk update && apk add --no-cache \
     python3 \
     py3-pip \
+    ca-certificates \
     jq \
     curl \
     git \
@@ -18,35 +19,33 @@ RUN apk update && apk add --no-cache \
     build-base \
     libffi-dev \
     openssl-dev \
-    && rm -rf /var/cache/apk/*
+  && update-ca-certificates \
+  && rm -rf /var/cache/apk/*
 
-# Ensure python/pip commands
-RUN ln -sf /usr/bin/python3 /usr/bin/python && ln -sf /usr/bin/pip3 /usr/bin/pip
+# Create and use a virtual environment to avoid PEP 668 (externally-managed)
+RUN python3 -m venv /opt/venv
+ENV VIRTUAL_ENV=/opt/venv
+ENV PATH="/opt/venv/bin:${PATH}"
 
-# Upgrade pip
-RUN pip install --no-cache-dir --upgrade pip setuptools wheel
+# Upgrade pip tooling inside the venv
+RUN python -m pip install --no-cache-dir --upgrade pip setuptools wheel
 
-# Install Python packages (CrewAI, LangChain, OpenAI, Supabase python client, Pinecone client)
-RUN pip install --no-cache-dir \
-    crewai \
+# Install a minimal, build-friendly Python dependency set
+# (Heavy packages like sentence-transformers/chromadb/pandas/numpy are omitted to ensure Alpine builds succeed.)
+RUN python -m pip install --no-cache-dir \
     langchain \
     openai \
     supabase \
     python-dotenv \
     pinecone-client \
-    chromadb \
-    sentence-transformers \
-    pandas \
-    numpy \
     requests
 
-# Install Node packages globally if n8n JS nodes need them (optional)
-# Note: package names may change; keep them minimal to avoid increasing image size excessively.
+# Optional: Install Node packages globally if n8n JS nodes need them
 RUN corepack enable \
  && npm set progress=false \
  && npm set fund=false \
  && npm set audit=false \
- && npm i -g --no-audit --no-fund @supabase/supabase-js openai langchain crewai || true
+ && npm i -g --no-audit --no-fund @supabase/supabase-js openai langchain || true
 
 # Create directories and set ownership
 RUN mkdir -p /home/node/.n8n/custom /data/.n8n \
@@ -55,14 +54,14 @@ RUN mkdir -p /home/node/.n8n/custom /data/.n8n \
 USER node
 WORKDIR /home/node
 
-ENV PYTHONPATH=/usr/bin/python3
+# n8n envs
 ENV N8N_USER_FOLDER=/home/node/.n8n
 ENV N8N_CUSTOM_EXTENSIONS=/home/node/.n8n/custom
 
 EXPOSE 5678
 
+# Use curl for healthcheck (present in image)
 HEALTHCHECK --interval=30s --timeout=10s --start-period=60s --retries=3 \
-  CMD wget --quiet --tries=1 --spider http://localhost:5678/healthz || exit 1
+  CMD curl --fail --silent http://localhost:5678/healthz || exit 1
 
-# Explicit start command
 CMD ["n8n", "start"]
