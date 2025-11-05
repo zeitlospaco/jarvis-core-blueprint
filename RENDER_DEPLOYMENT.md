@@ -58,13 +58,43 @@ You must provide values for:
 
 For full functionality, provide:
 
+##### Database Configuration (Choose One)
+
+**Option A: Use Supabase Database (Recommended - Save $7/month)**
+
+Instead of using Render's managed PostgreSQL, you can use Supabase:
+
+- **SUPABASE_DB_URL**: Full PostgreSQL connection string from Supabase
+  ```
+  postgresql://postgres:[PASSWORD]@db.xxxxx.supabase.co:5432/postgres
+  ```
+  Get this from: Supabase Dashboard → Settings → Database → Connection String (URI format)
+
+**Benefits**: 
+- Free tier available (500MB)
+- Costs $0 vs Render's $7/month for database
+- Built-in features (Auth, Storage, Realtime)
+- See [Deployment mit Supabase](README.md#deployment-mit-supabase) for detailed setup
+
+**Option B: Use Render Managed PostgreSQL**
+
+The `render.yaml` can be configured to provision a Render PostgreSQL database (not included in current configuration to save costs). If you prefer Render's managed database, you can provision it separately and connect using individual DB variables.
+
+##### Supabase Integration (For n8n nodes)
+
 - **SUPABASE_URL**: Your Supabase project URL (e.g., `https://xxxxx.supabase.co`)
 - **SUPABASE_ANON_KEY**: Supabase anonymous key
 - **SUPABASE_SERVICE_KEY**: Supabase service role key (keep secret!)
   - **Note**: In Supabase dashboard, this is labeled as `service_role` key
   - Previous versions used `SUPABASE_SERVICE_ROLE` - both names work, but `SUPABASE_SERVICE_KEY` is recommended
+
+##### AI/LLM Services
+
 - **OPENAI_API_KEY**: OpenAI API key for AI workflows
 - **ANTHROPIC_API_KEY**: Anthropic/Claude API key
+
+##### Email Notifications
+
 - **SMTP_HOST**: SMTP server for email notifications
 - **SMTP_USER**: SMTP username
 - **SMTP_PASSWORD**: SMTP password
@@ -106,12 +136,28 @@ To use your own domain:
    ```
 4. Render will automatically provision an SSL certificate
 
-### Configure Supabase Integration
+### Configure Supabase Database (Recommended)
+
+If you're using Supabase as your database (via `SUPABASE_DB_URL`):
 
 1. Create a Supabase project at [supabase.com](https://supabase.com)
-2. Get your credentials from **Project Settings → API**
-3. Add the credentials to Render environment variables
-4. Create required tables for logging (see main README.md)
+2. Go to **Settings → Database** in your Supabase dashboard
+3. Copy the connection string (URI format)
+4. Add `SUPABASE_DB_URL` to Render environment variables
+5. n8n will automatically create required tables on first run
+
+For detailed Supabase setup, see [Deployment mit Supabase](README.md#deployment-mit-supabase).
+
+### Configure Supabase Integration (Optional)
+
+To use Supabase features in n8n workflows:
+
+1. Get your credentials from **Project Settings → API** in Supabase
+2. Add the credentials to Render environment variables:
+   - `SUPABASE_URL`
+   - `SUPABASE_ANON_KEY`
+   - `SUPABASE_SERVICE_KEY`
+3. Create additional tables for logging if needed (see main README.md)
 
 ### Test Your Deployment
 
@@ -128,17 +174,26 @@ The `render.yaml` defines the following:
 
 - **Service Type**: Web Service (Docker)
 - **Region**: Frankfurt (eu-central) - GDPR compliant
-- **Plan**: Standard ($25/month)
-- **Disk**: 10GB persistent storage for n8n data
+- **Plan**: Starter ($7/month) - can be upgraded to Standard ($25/month)
+- **Disk**: 1GB persistent storage for n8n data
 - **Health Check**: `/healthz` endpoint monitored every 30s
 
 ### Database Configuration
 
-- **Database**: PostgreSQL 15
-- **Plan**: Starter ($7/month)
-- **Database Name**: jarvis_n8n
-- **User**: jarvis_admin
-- **Connection**: Automatically linked to web service
+**Current Setup (Recommended)**: External Supabase database via `SUPABASE_DB_URL`
+- **Cost**: $0 (Supabase free tier) or $25/month (Supabase Pro)
+- **Storage**: 500MB (free) or 8GB (Pro)
+- **Benefits**: Cost-effective, built-in features, easy scaling
+
+**Alternative Setup**: Render managed PostgreSQL (not included by default)
+- **Cost**: +$7/month for Starter database
+- **Storage**: 15GB included
+- **Benefits**: Fully managed by Render, integrated backups
+
+To use Render's database instead of Supabase, you would need to:
+1. Add a PostgreSQL service to `render.yaml`
+2. Update environment variables to use `fromDatabase` references
+3. Remove or don't set `SUPABASE_DB_URL`
 
 ### Auto-Scaling
 
@@ -153,13 +208,25 @@ The Standard plan includes:
 
 Monthly costs on Render:
 
+### Using Supabase Database (Recommended)
+- **Web Service (Starter)**: $7/month
+- **Web Service (Standard)**: $25/month
+- **Supabase Free Tier**: $0/month
+- **Supabase Pro**: $25/month
+- **Total**: $7-50/month depending on plan choices
+
+### Using Render PostgreSQL
+- **Web Service (Starter)**: $7/month
 - **Web Service (Standard)**: $25/month
 - **PostgreSQL (Starter)**: $7/month
-- **Total**: ~$32/month
+- **Total**: $14-32/month
 
-You can downgrade to the Starter plan ($7/month) for testing, but it has limitations:
+**Recommendation**: Start with Render Starter + Supabase Free ($7/month total) for testing. Upgrade to Standard plan + Supabase Pro for production (~$50/month).
+
+**Note about Starter Plan**: 
 - Service sleeps after 15 minutes of inactivity
-- Slower cold starts
+- Slower cold starts (30-60 seconds)
+- Not recommended for production use
 
 ## Troubleshooting
 
