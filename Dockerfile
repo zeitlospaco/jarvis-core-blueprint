@@ -55,6 +55,10 @@ RUN mkdir -p /home/node/.n8n/custom /data/.n8n \
 RUN printf '#!/usr/bin/env sh\nset -e\nif [ -n "$SUPABASE_DB_URL" ] && [ -z "$DB_POSTGRESDB_CONNECTION_STRING" ]; then\n  export DB_POSTGRESDB_CONNECTION_STRING="$SUPABASE_DB_URL"\nfi\nexec n8n start\n' > /usr/local/bin/start-n8n.sh \
  && chmod +x /usr/local/bin/start-n8n.sh
 
+# Optional: Fix n8n config settings permissions warnings
+RUN chmod 600 /home/node/.n8n/config || true
+ENV N8N_ENFORCE_SETTINGS_FILE_PERMISSIONS=true
+
 USER node
 WORKDIR /home/node
 
@@ -66,5 +70,5 @@ EXPOSE 5678
 HEALTHCHECK --interval=30s --timeout=10s --start-period=60s --retries=3 \
   CMD curl --fail --silent http://localhost:5678/healthz || exit 1
 
-# Use wrapper to ensure DB connection string is set from Supabase variable
-CMD ["/usr/local/bin/start-n8n.sh"]
+# Use wrapper as ENTRYPOINT to ensure DB connection string is set from Supabase variable
+ENTRYPOINT ["/usr/local/bin/start-n8n.sh"]
