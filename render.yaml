@@ -39,6 +39,8 @@ services:
         generateValue: true
 
       # Database (external Supabase connection)
+      # SUPABASE_DB_URL is used for external Supabase database connection
+      # It's automatically mapped to DB_POSTGRESDB_CONNECTION_STRING for n8n compatibility
       - key: DB_TYPE
         value: postgresdb
       - key: SUPABASE_DB_URL

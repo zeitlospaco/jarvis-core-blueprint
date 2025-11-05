@@ -350,9 +350,9 @@ This section provides step-by-step instructions for deploying Jarvis Core with a
 3. Select the **URI** tab
 4. You'll see a connection string like:
    ```
-   postgresql://postgres:[YOUR-PASSWORD]@db.xxxxxxxxxxxxx.supabase.co:5432/postgres
+   postgresql://postgres:{YOUR_PASSWORD}@db.xxxxxxxxxxxxx.supabase.co:5432/postgres
    ```
-5. Replace `[YOUR-PASSWORD]` with your actual database password from Step 1
+5. Replace `{YOUR_PASSWORD}` with your actual database password from Step 1
 6. **Copy the complete connection string** - you'll need it in the next step
 
 **⚠️ Security Warning**: This connection string contains your database password. Keep it secret and never commit it to public repositories!
@@ -366,7 +366,7 @@ Choose your deployment method:
 1. Follow the [Render Deployment Guide](RENDER_DEPLOYMENT.md)
 2. When prompted for environment variables, add:
    ```
-   SUPABASE_DB_URL=postgresql://postgres:[YOUR-PASSWORD]@db.xxxxx.supabase.co:5432/postgres
+   SUPABASE_DB_URL=postgresql://postgres:{YOUR_PASSWORD}@db.xxxxx.supabase.co:5432/postgres
    ```
 3. The blueprint will automatically use this instead of creating a Render database
 4. Complete the deployment as normal
@@ -392,7 +392,7 @@ Choose your deployment method:
    ```
 3. Add this line:
    ```bash
-   SUPABASE_DB_URL=postgresql://postgres:[YOUR-PASSWORD]@db.xxxxx.supabase.co:5432/postgres
+   SUPABASE_DB_URL=postgresql://postgres:{YOUR_PASSWORD}@db.xxxxx.supabase.co:5432/postgres
    ```
 4. Comment out local PostgreSQL settings (optional - n8n will prioritize `SUPABASE_DB_URL`)
 5. Start services with `docker-compose up -d`
@@ -412,7 +412,7 @@ Choose your deployment method:
 
 3. Edit `.env` and set:
    ```bash
-   SUPABASE_DB_URL=postgresql://postgres:[YOUR-PASSWORD]@db.xxxxx.supabase.co:5432/postgres
+   SUPABASE_DB_URL=postgresql://postgres:{YOUR_PASSWORD}@db.xxxxx.supabase.co:5432/postgres
    ```
 
 4. Start only n8n (skip local PostgreSQL):
@@ -482,7 +482,7 @@ Beyond just using Supabase as a database, you can integrate other features:
 
 **Solution**: Supabase requires SSL. Add `?sslmode=require` to your connection string:
 ```
-postgresql://postgres:[PASSWORD]@db.xxxxx.supabase.co:5432/postgres?sslmode=require
+postgresql://postgres:{YOUR_PASSWORD}@db.xxxxx.supabase.co:5432/postgres?sslmode=require
 ```
 
 #### Too Many Connections
@@ -528,7 +528,7 @@ Supabase automatically backs up your database:
 # Settings → Database → Database Backups → Download
 
 # Or use pg_dump with your connection string
-pg_dump "postgresql://postgres:[PASSWORD]@db.xxxxx.supabase.co:5432/postgres" > backup.sql
+pg_dump "postgresql://postgres:{YOUR_PASSWORD}@db.xxxxx.supabase.co:5432/postgres" > backup.sql
 ```
 
 ### Migration from Local PostgreSQL to Supabase
@@ -544,7 +544,7 @@ If you're already running n8n with local PostgreSQL and want to migrate:
 
 3. **Import to Supabase**:
    ```bash
-   psql "postgresql://postgres:[PASSWORD]@db.xxxxx.supabase.co:5432/postgres" < backup.sql
+   psql "postgresql://postgres:{YOUR_PASSWORD}@db.xxxxx.supabase.co:5432/postgres" < backup.sql
    ```
 
 4. **Update environment**:

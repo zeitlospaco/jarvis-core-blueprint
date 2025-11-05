@@ -173,6 +173,7 @@ services:
       # === Database Configuration ===
       # Option 1: Use SUPABASE_DB_URL if provided (for external Supabase database)
       # Option 2: Use local PostgreSQL (default for docker-compose deployment)
+      # Note: Empty string for CONNECTION_STRING means n8n will use individual parameters below
       - DB_TYPE=postgresdb
       - DB_POSTGRESDB_CONNECTION_STRING=${SUPABASE_DB_URL:-}
       - DB_POSTGRESDB_HOST=${DB_POSTGRESDB_HOST:-postgres}
