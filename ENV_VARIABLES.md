@@ -14,15 +14,41 @@ These variables **must** be configured before deployment:
 
 ## Database Variables (Auto-configured on Render)
 
-These are automatically set by Render when using the blueprint:
+### Option 1: Supabase Connection String (Recommended)
+
+For using an external Supabase database, use a single connection string:
+
+| Variable | Description | Example |
+|----------|-------------|---------|
+| `SUPABASE_DB_URL` | Full PostgreSQL connection string for Supabase | `postgres://postgres.xxxxx:password@db.supabase.co:5432/postgres` |
+
+The connection string format is:
+```
+postgres://[user]:[password]@[host]:[port]/[database]
+```
+
+**How to get your Supabase connection string:**
+1. Go to your Supabase project dashboard
+2. Navigate to **Settings → Database**
+3. Find the **Connection String** section
+4. Select **URI** format
+5. Copy the connection string (includes password)
+
+This variable is automatically used by n8n as `DB_POSTGRESDB_CONNECTION_STRING`.
+
+### Option 2: Individual Database Parameters (Local PostgreSQL)
+
+These are automatically set by Render when using the blueprint with the managed database:
 
 | Variable | Description | Source |
 |----------|-------------|--------|
-| `DB_POSTGRESDB_HOST` | PostgreSQL host | From Render database |
-| `DB_POSTGRESDB_PORT` | PostgreSQL port | From Render database |
-| `DB_POSTGRESDB_DATABASE` | Database name | From Render database |
-| `DB_POSTGRESDB_USER` | Database user | From Render database |
-| `DB_POSTGRESDB_PASSWORD` | Database password | From Render database |
+| `DB_POSTGRESDB_HOST` | PostgreSQL host | From Render database or local `postgres` service |
+| `DB_POSTGRESDB_PORT` | PostgreSQL port | From Render database or default `5432` |
+| `DB_POSTGRESDB_DATABASE` | Database name | From Render database or default `n8n` |
+| `DB_POSTGRESDB_USER` | Database user | From Render database or default `n8n_user` |
+| `DB_POSTGRESDB_PASSWORD` | Database password | From Render database or `.env` |
+
+**Note**: If `SUPABASE_DB_URL` is provided, it takes precedence over individual parameters.
 
 ## Optional But Recommended
 

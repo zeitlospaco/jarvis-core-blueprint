@@ -41,10 +41,10 @@ services:
       # Database (external Supabase connection)
       - key: DB_TYPE
         value: postgresdb
-      - key: DATABASE_URL
-        value: ${SUPABASE_DB_URL}
+      - key: SUPABASE_DB_URL
+        sync: false
       - key: DB_POSTGRESDB_CONNECTION_STRING
-        value: ${DATABASE_URL}
+        value: ${SUPABASE_DB_URL}
 
       # Optional placeholders
       - key: SUPABASE_DB_HOST

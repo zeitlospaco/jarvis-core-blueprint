@@ -22,6 +22,7 @@ Jarvis Core Blueprint is a production-ready deployment configuration for n8n wor
   - [Deploy on Render.com](#deploy-on-rendercom)
   - [Deploy on Hetzner](#deploy-on-hetzner)
   - [Local Development](#local-development)
+  - [Deployment mit Supabase](#deployment-mit-supabase)
 - [Configuration](#configuration)
 - [Integration Guide](#integration-guide)
 - [Backup & Restore](#backup--restore)
@@ -313,6 +314,274 @@ docker-compose --env-file .env.local up -d
 - HTTPS/Traefik is optional
 - Use `http://localhost:5678` directly
 - PostgreSQL data persists in named volume
+
+## Deployment mit Supabase
+
+This section provides step-by-step instructions for deploying Jarvis Core with a Supabase PostgreSQL database instead of a local or managed PostgreSQL instance.
+
+### Why Use Supabase?
+
+- **Free Tier Available**: Up to 500MB database (enough for getting started)
+- **Global CDN**: Fast database access from anywhere
+- **Built-in Features**: Auth, Storage, and Realtime capabilities
+- **Easy Setup**: No server management required
+- **Scalable**: Upgrade as you grow
+
+### Prerequisites
+
+1. A [Supabase](https://supabase.com) account (free tier works)
+2. Your deployment platform ready (Render, Railway, Hetzner, or local)
+
+### Step 1: Create Supabase Project
+
+1. Go to [supabase.com](https://supabase.com) and sign in
+2. Click **"New Project"**
+3. Choose your organization or create a new one
+4. Fill in project details:
+   - **Name**: `jarvis-n8n` (or your preferred name)
+   - **Database Password**: Generate a strong password (save it!)
+   - **Region**: Choose closest to your deployment (e.g., `eu-central` for Europe)
+5. Click **"Create new project"** and wait 1-2 minutes for provisioning
+
+### Step 2: Get Database Connection String
+
+1. In your Supabase project dashboard, go to **Settings → Database**
+2. Scroll down to **Connection string** section
+3. Select the **URI** tab
+4. You'll see a connection string like:
+   ```
+   postgresql://postgres:[YOUR-PASSWORD]@db.xxxxxxxxxxxxx.supabase.co:5432/postgres
+   ```
+5. Replace `[YOUR-PASSWORD]` with your actual database password from Step 1
+6. **Copy the complete connection string** - you'll need it in the next step
+
+**⚠️ Security Warning**: This connection string contains your database password. Keep it secret and never commit it to public repositories!
+
+### Step 3: Configure Your Deployment
+
+Choose your deployment method:
+
+#### A. Deploy on Render.com
+
+1. Follow the [Render Deployment Guide](RENDER_DEPLOYMENT.md)
+2. When prompted for environment variables, add:
+   ```
+   SUPABASE_DB_URL=postgresql://postgres:[YOUR-PASSWORD]@db.xxxxx.supabase.co:5432/postgres
+   ```
+3. The blueprint will automatically use this instead of creating a Render database
+4. Complete the deployment as normal
+
+**Cost Savings**: Using Supabase means you don't pay for Render's PostgreSQL ($7/month), only the web service ($25/month for Standard plan).
+
+#### B. Deploy on Railway
+
+1. Create a new project on [Railway](https://railway.app)
+2. Connect your GitHub repository
+3. Add environment variable in Railway dashboard:
+   - Key: `SUPABASE_DB_URL`
+   - Value: Your Supabase connection string
+4. Add other required variables (see [ENV_VARIABLES.md](ENV_VARIABLES.md))
+5. Deploy from the dashboard
+
+#### C. Deploy on Hetzner or Self-Hosted
+
+1. Follow the [Hetzner deployment steps](#deploy-on-hetzner)
+2. When editing `.env` file:
+   ```bash
+   nano .env
+   ```
+3. Add this line:
+   ```bash
+   SUPABASE_DB_URL=postgresql://postgres:[YOUR-PASSWORD]@db.xxxxx.supabase.co:5432/postgres
+   ```
+4. Comment out local PostgreSQL settings (optional - n8n will prioritize `SUPABASE_DB_URL`)
+5. Start services with `docker-compose up -d`
+
+#### D. Local Development with Supabase
+
+1. Clone the repository:
+   ```bash
+   git clone https://github.com/zeitlospaco/jarvis-core-blueprint.git
+   cd jarvis-core-blueprint
+   ```
+
+2. Create `.env` file:
+   ```bash
+   cp .env.example .env
+   ```
+
+3. Edit `.env` and set:
+   ```bash
+   SUPABASE_DB_URL=postgresql://postgres:[YOUR-PASSWORD]@db.xxxxx.supabase.co:5432/postgres
+   ```
+
+4. Start only n8n (skip local PostgreSQL):
+   ```bash
+   docker-compose up n8n -d
+   ```
+
+### Step 4: Verify Database Connection
+
+After deployment, verify n8n is using Supabase:
+
+1. Access your n8n instance
+2. Check the logs for successful database connection:
+   ```bash
+   # For Docker Compose
+   docker-compose logs n8n | grep -i "database"
+   
+   # For Render
+   # Check logs in Render dashboard
+   ```
+
+3. You should see messages indicating PostgreSQL connection success
+
+4. In Supabase dashboard, go to **Database → Roles and Policies**
+   - You'll see new tables created by n8n (like `execution_entity`, `workflow_entity`)
+
+### Step 5: Configure Additional Supabase Features (Optional)
+
+Beyond just using Supabase as a database, you can integrate other features:
+
+#### Enable Supabase Integration in n8n
+
+1. In Supabase project, go to **Settings → API**
+2. Copy these credentials:
+   - **Project URL**: `https://xxxxx.supabase.co`
+   - **anon public key**: For client-side operations
+   - **service_role key**: For server-side operations (keep secret!)
+
+3. Add to your environment variables:
+   ```bash
+   SUPABASE_URL=https://xxxxx.supabase.co
+   SUPABASE_ANON_KEY=your_anon_key_here
+   SUPABASE_SERVICE_KEY=your_service_role_key_here
+   ```
+
+4. In n8n, you can now:
+   - Use Supabase nodes in workflows
+   - Store workflow data in Supabase tables
+   - Use Supabase Auth for user management
+   - Leverage Supabase Storage for files
+
+### Troubleshooting Supabase Connection
+
+#### Connection Timeout
+
+**Problem**: n8n logs show "connection timeout" or "ETIMEDOUT"
+
+**Solutions**:
+1. Check your Supabase password is correct in the connection string
+2. Verify the region matches (some regions may have slower connections)
+3. Check firewall settings on your deployment platform
+4. Ensure you're using the correct connection string format with `postgresql://` (not `postgres://`)
+
+#### SSL/TLS Errors
+
+**Problem**: "SSL connection error" or certificate validation issues
+
+**Solution**: Supabase requires SSL. Add `?sslmode=require` to your connection string:
+```
+postgresql://postgres:[PASSWORD]@db.xxxxx.supabase.co:5432/postgres?sslmode=require
+```
+
+#### Too Many Connections
+
+**Problem**: "too many connections" error
+
+**Solution**: 
+1. Free tier has connection limits (60 concurrent connections)
+2. Upgrade to Pro plan for more connections
+3. Or adjust n8n execution mode to use fewer connections
+
+#### Cannot Connect from IP
+
+**Problem**: Connection refused or blocked
+
+**Solution**: 
+1. Go to Supabase → **Settings → Database**
+2. Check **Connection Pooling** settings
+3. Ensure your deployment IP isn't blocked
+4. Consider using connection pooling mode
+
+### Security Best Practices for Supabase
+
+1. **Never commit connection strings**: Always use environment variables
+2. **Use strong passwords**: Generate with `openssl rand -base64 32`
+3. **Rotate credentials regularly**: Every 90 days
+4. **Enable Row Level Security (RLS)**: In Supabase for production data
+5. **Monitor access logs**: Check Supabase dashboard regularly
+6. **Use connection pooling**: For production deployments
+7. **Backup regularly**: Use Supabase's backup features
+
+### Database Backups with Supabase
+
+Supabase automatically backs up your database:
+
+- **Free Tier**: Daily backups, 7-day retention
+- **Pro Tier**: Daily backups, 30-day retention
+- **Enterprise**: Custom retention policies
+
+**Manual Backup**:
+```bash
+# Export from Supabase dashboard
+# Settings → Database → Database Backups → Download
+
+# Or use pg_dump with your connection string
+pg_dump "postgresql://postgres:[PASSWORD]@db.xxxxx.supabase.co:5432/postgres" > backup.sql
+```
+
+### Migration from Local PostgreSQL to Supabase
+
+If you're already running n8n with local PostgreSQL and want to migrate:
+
+1. **Backup existing data**:
+   ```bash
+   docker-compose exec postgres pg_dump -U n8n_user n8n > backup.sql
+   ```
+
+2. **Set up Supabase** (follow Step 1 & 2 above)
+
+3. **Import to Supabase**:
+   ```bash
+   psql "postgresql://postgres:[PASSWORD]@db.xxxxx.supabase.co:5432/postgres" < backup.sql
+   ```
+
+4. **Update environment**:
+   - Add `SUPABASE_DB_URL` to your `.env`
+   - Restart n8n
+
+5. **Verify data**:
+   - Check workflows are present
+   - Test executions work
+   - Verify credentials are accessible
+
+### Cost Comparison
+
+| Component | Local PostgreSQL | Render PostgreSQL | Supabase Free | Supabase Pro |
+|-----------|------------------|-------------------|---------------|--------------|
+| Database | Free (self-host) | $7/month | $0/month | $25/month |
+| Storage | Self-managed | 15GB | 500MB | 8GB |
+| Bandwidth | Unlimited | Unlimited | 5GB/month | 250GB/month |
+| Connections | No limit | 97 | 60 | 200 |
+| Backups | Manual | 30 days | 7 days | 30 days |
+
+**Recommendation**:
+- **Development/Testing**: Supabase Free
+- **Small Production**: Supabase Pro
+- **Large Scale**: Self-hosted or Render managed database
+
+### Next Steps
+
+After deploying with Supabase:
+
+1. ✅ Test your first workflow in n8n
+2. ✅ Configure additional integrations (OpenAI, etc.)
+3. ✅ Set up monitoring and alerts
+4. ✅ Configure automated backups
+5. ✅ Review security settings
+
+For detailed environment variable configuration, see [ENV_VARIABLES.md](ENV_VARIABLES.md).
 
 ## ⚙️ Configuration
 
