@@ -51,9 +51,9 @@ RUN corepack enable \
 RUN mkdir -p /home/node/.n8n/custom /data/.n8n \
  && chown -R node:node /home/node/.n8n /data
 
-# Add a lightweight startup wrapper to map SUPABASE_DB_URL -> DB_POSTGRESDB_CONNECTION_STRING if needed
-RUN printf '#!/usr/bin/env sh\nset -e\nif [ -n "$SUPABASE_DB_URL" ] && [ -z "$DB_POSTGRESDB_CONNECTION_STRING" ]; then\n  export DB_POSTGRESDB_CONNECTION_STRING="$SUPABASE_DB_URL"\nfi\nexec n8n start\n' > /usr/local/bin/start-n8n.sh \
- && chmod +x /usr/local/bin/start-n8n.sh
+# Add a startup wrapper script that maps SUPABASE_DB_URL -> DB_POSTGRESDB_CONNECTION_STRING if needed
+# and prints debug info about the DB env vars so we can see them in Render logs.
+RUN cat > /usr/local/bin/start-n8n.sh <<'EOF'\n#!/usr/bin/env sh\nset -e\n\n# Print debug info to logs to verify which DB env vars are available at container start\nprintf "DEBUG_STARTUP: DB_POSTGRESDB_CONNECTION_STRING='%s'\n" "$DB_POSTGRESDB_CONNECTION_STRING"\nprintf "DEBUG_STARTUP: SUPABASE_DB_URL='%s'\n" "$SUPABASE_DB_URL"\nprintf "DEBUG_STARTUP: DATABASE_URL='%s'\n" "$DATABASE_URL"\n\n# If SUPABASE_DB_URL is set but DB_POSTGRESDB_CONNECTION_STRING is not, map it\nif [ -n "$SUPABASE_DB_URL" ] && [ -z "$DB_POSTGRESDB_CONNECTION_STRING" ]; then\n  export DB_POSTGRESDB_CONNECTION_STRING="$SUPABASE_DB_URL"\n  printf "DEBUG_STARTUP: MAPPED DB_POSTGRESDB_CONNECTION_STRING from SUPABASE_DB_URL\n"\nfi\n\nexec n8n start\nEOF\n\n&& chmod +x /usr/local/bin/start-n8n.sh
 
 # Optional: Fix n8n config settings permissions warnings
 RUN chmod 600 /home/node/.n8n/config || true
