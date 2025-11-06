@@ -54,14 +54,14 @@ services:
         generateValue: true
 
       # Database (external Supabase connection)
-      # SUPABASE_DB_URL is used for external Supabase database connection
-      # It's automatically mapped to DB_POSTGRESDB_CONNECTION_STRING for n8n compatibility
+      # SUPABASE_DB_URL is the primary database connection string
+      # It's used directly by n8n for database connection
       - key: DB_TYPE
         value: postgresdb
       - key: SUPABASE_DB_URL
         sync: false
       - key: DB_POSTGRESDB_CONNECTION_STRING
-        value: ${SUPABASE_DB_URL}
+        sync: false
 
       # Optional placeholders
       - key: SUPABASE_DB_HOST
