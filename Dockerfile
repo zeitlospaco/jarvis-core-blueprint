@@ -51,8 +51,8 @@ RUN corepack enable \
 RUN mkdir -p /home/node/.n8n/custom /data/.n8n \
  && chown -R node:node /home/node/.n8n /data
 
-# Add a lightweight startup wrapper to map SUPABASE_DB_URL -> DB_POSTGRESDB_CONNECTION_STRING if needed
-RUN printf '#!/usr/bin/env sh\nset -e\nif [ -n "$SUPABASE_DB_URL" ] && [ -z "$DB_POSTGRESDB_CONNECTION_STRING" ]; then\n  export DB_POSTGRESDB_CONNECTION_STRING="$SUPABASE_DB_URL"\nfi\nexec n8n start\n' > /usr/local/bin/start-n8n.sh \
+# Add a lightweight startup wrapper to handle environment variables and connection strings
+RUN printf '#!/usr/bin/env sh\nset -e\n\n# Map SUPABASE_DB_URL to DB_POSTGRESDB_CONNECTION_STRING if needed\nif [ -n "$SUPABASE_DB_URL" ] && [ -z "$DB_POSTGRESDB_CONNECTION_STRING" ]; then\n  export DB_POSTGRESDB_CONNECTION_STRING="$SUPABASE_DB_URL"\nfi\n\n# Normalize postgres:// to postgresql:// for n8n compatibility\nif [ -n "$DB_POSTGRESDB_CONNECTION_STRING" ]; then\n  DB_POSTGRESDB_CONNECTION_STRING=$(echo "$DB_POSTGRESDB_CONNECTION_STRING" | sed "s|^postgres://|postgresql://|")\n  export DB_POSTGRESDB_CONNECTION_STRING\nfi\n\n# Use PORT from Render if set, otherwise default to N8N_PORT or 5678\nif [ -n "$PORT" ]; then\n  export N8N_PORT="$PORT"\nelif [ -z "$N8N_PORT" ]; then\n  export N8N_PORT="5678"\nfi\n\necho "Starting n8n on port $N8N_PORT"\n\nexec n8n start\n' > /usr/local/bin/start-n8n.sh \
  && chmod +x /usr/local/bin/start-n8n.sh
 
 # Optional: Fix n8n config settings permissions warnings

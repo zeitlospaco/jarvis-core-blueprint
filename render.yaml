@@ -22,11 +22,26 @@ services:
           type: web
           property: host
       - key: N8N_PORT
-        value: 5678
+        fromService:
+          name: jarvis-n8n
+          type: web
+          property: port
       - key: N8N_PROTOCOL
         value: https
       - key: N8N_LISTEN_ADDRESS
         value: 0.0.0.0
+      
+      # Webhook and editor URLs (auto-configured from host)
+      - key: WEBHOOK_URL
+        fromService:
+          name: jarvis-n8n
+          type: web
+          property: host
+      - key: N8N_EDITOR_BASE_URL
+        fromService:
+          name: jarvis-n8n
+          type: web
+          property: host
 
       # Authentication / encryption
       - key: N8N_BASIC_AUTH_ACTIVE
