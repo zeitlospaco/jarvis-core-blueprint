@@ -63,9 +63,7 @@ services:
       - key: DB_POSTGRESDB_CONNECTION_STRING
         sync: false
 
-      # Optional placeholders
-      - key: SUPABASE_DB_HOST
-        generateValue: true
+      # Supabase integration variables (for n8n Supabase nodes, not for database connection)
       - key: SUPABASE_SERVICE_KEY
         generateValue: true
       - key: SUPABASE_URL
