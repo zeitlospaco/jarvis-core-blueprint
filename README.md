@@ -353,6 +353,13 @@ This section provides step-by-step instructions for deploying Jarvis Core with a
    postgresql://postgres:{YOUR_PASSWORD}@db.xxxxxxxxxxxxx.supabase.co:5432/postgres
    ```
 5. Replace `{YOUR_PASSWORD}` with your actual database password from Step 1
+
+**Important for Render/Railway/Serverless deployments**: Consider using the connection pooler (port 6543) for better reliability:
+```
+postgresql://postgres:{YOUR_PASSWORD}@db.xxxxxxxxxxxxx.supabase.co:6543/postgres
+```
+
+The connection pooler is recommended for container-based deployments as it handles connections more efficiently.
 6. **Copy the complete connection string** - you'll need it in the next step
 
 **⚠️ Security Warning**: This connection string contains your database password. Keep it secret and never commit it to public repositories!
@@ -468,13 +475,24 @@ Beyond just using Supabase as a database, you can integrate other features:
 
 #### Connection Timeout
 
-**Problem**: n8n logs show "connection timeout" or "ETIMEDOUT"
+**Problem**: n8n logs show "connection timeout" or "ETIMEDOUT" or "TCP FAIL"
 
 **Solutions**:
-1. Check your Supabase password is correct in the connection string
-2. Verify the region matches (some regions may have slower connections)
-3. Check firewall settings on your deployment platform
-4. Ensure you're using the correct connection string format with `postgresql://` (not `postgres://`)
+1. **Check if database is paused**: Supabase free tier databases pause after 7 days of inactivity
+   - Go to your Supabase project dashboard
+   - If you see "Database paused", click "Resume" 
+   - Wait 1-2 minutes for the database to wake up
+2. **Use Connection Pooler**: For better reliability on platforms like Render, use port 6543 instead of 5432:
+   ```
+   postgresql://postgres:{YOUR_PASSWORD}@db.xxxxx.supabase.co:6543/postgres?sslmode=require
+   ```
+   This uses Supabase's connection pooler which is more stable for serverless/container deployments
+3. Check your Supabase password is correct in the connection string
+4. Verify the region matches (some regions may have slower connections)
+5. Check firewall settings on your deployment platform
+6. Ensure you're using the correct connection string format with `postgresql://` (not `postgres://`)
+
+**Note**: If deploying to Render, the startup script automatically converts `postgres://` to `postgresql://` for compatibility.
 
 #### SSL/TLS Errors
 

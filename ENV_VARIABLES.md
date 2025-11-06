@@ -20,12 +20,18 @@ For using an external Supabase database, use a single connection string:
 
 | Variable | Description | Example |
 |----------|-------------|---------|
-| `SUPABASE_DB_URL` | Full PostgreSQL connection string for Supabase | `postgres://postgres.xxxxx:password@db.supabase.co:5432/postgres` |
+| `SUPABASE_DB_URL` | Full PostgreSQL connection string for Supabase | `postgresql://postgres:password@db.xxxxx.supabase.co:6543/postgres` |
 
 The connection string format is:
 ```
-postgres://[user]:[password]@[host]:[port]/[database]
+postgresql://[user]:[password]@[host]:[port]/[database]
 ```
+
+**Important**: Use `postgresql://` not `postgres://` (the startup script will normalize this automatically if needed).
+
+**Port Selection**:
+- **Port 5432**: Direct database connection (default)
+- **Port 6543**: Connection pooler (recommended for Render/Railway/serverless deployments)
 
 **How to get your Supabase connection string:**
 1. Go to your Supabase project dashboard
@@ -33,6 +39,7 @@ postgres://[user]:[password]@[host]:[port]/[database]
 3. Find the **Connection String** section
 4. Select **URI** format
 5. Copy the connection string (includes password)
+6. For production deployments, change port from `5432` to `6543` to use the connection pooler
 
 This variable is automatically used by n8n as `DB_POSTGRESDB_CONNECTION_STRING`.
 
