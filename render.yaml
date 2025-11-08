@@ -3,7 +3,7 @@ version: "1"
 services:
   - type: web
     name: jarvis-n8n
-    env: docker
+    runtime: docker
     region: frankfurt
     dockerfilePath: ./Dockerfile
     healthCheckPath: /healthz
@@ -17,10 +17,7 @@ services:
 
     envVars:
       - key: N8N_HOST
-        fromService:
-          name: jarvis-n8n
-          type: web
-          property: host
+        value: 0.0.0.0
       - key: N8N_PORT
         value: 5678
       - key: N8N_PROTOCOL
@@ -38,42 +35,46 @@ services:
       - key: N8N_ENCRYPTION_KEY
         generateValue: true
 
-      # Database (external Supabase connection)
+      # Database - WICHTIG: SUPABASE_DB_URL wird zu DATABASE_URL gemappt
       - key: DB_TYPE
         value: postgresdb
+      - key: SUPABASE_DB_URL
+        sync: false
       - key: DATABASE_URL
         value: ${SUPABASE_DB_URL}
       - key: DB_POSTGRESDB_CONNECTION_STRING
-        value: ${DATABASE_URL}
+        value: ${SUPABASE_DB_URL}
 
-      # Optional placeholders
-      - key: SUPABASE_DB_HOST
-        generateValue: true
-      - key: SUPABASE_SERVICE_KEY
-        generateValue: true
+      # Supabase Configuration
       - key: SUPABASE_URL
-        generateValue: true
+        sync: false
       - key: SUPABASE_ANON_KEY
-        generateValue: true
+        sync: false
+      - key: SUPABASE_SERVICE_KEY
+        sync: false
 
+      # AI APIs
       - key: OPENAI_API_KEY
-        generateValue: true
+        sync: false
       - key: ANTHROPIC_API_KEY
-        generateValue: true
+        sync: false
       - key: PINECONE_API_KEY
-        generateValue: true
+        sync: false
       - key: PINECONE_ENV
         value: us-east1-gcp
 
+      # LangChain
       - key: LANGCHAIN_API_KEY
-        generateValue: true
+        sync: false
+      
+      # SMTP
       - key: SMTP_HOST
-        generateValue: true
+        sync: false
       - key: SMTP_PORT
         value: 587
       - key: SMTP_USER
-        generateValue: true
+        sync: false
       - key: SMTP_PASSWORD
-        generateValue: true
+        sync: false
       - key: SMTP_FROM_EMAIL
-        generateValue: true
+        sync: false
