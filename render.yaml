@@ -12,7 +12,7 @@ services:
 
     disk:
       name: n8n-data
-      mountPath: /home/node/.n8n
+      mountPath: /data/.n8n
       sizeGB: 1
 
     envVars:
@@ -36,27 +36,10 @@ services:
       - key: N8N_ENCRYPTION_KEY
         generateValue: true
 
-      # Database Configuration - KRITISCH!
-      # Setze alle drei Variablen auf den gleichen Wert
+      # Database Configuration
+      # Using SQLite with persistent disk - no external DB needed
       - key: DB_TYPE
-        value: postgresdb
-      
-      # WICHTIG: Hier deine Supabase Connection String!
-      # Format: postgresql://postgres:PASSWORD@db.PROJECT.supabase.co:5432/postgres
-      - key: SUPABASE_DB_URL
-        value: postgresql://postgres:vOlka23nsupabase@db.ydocvzfqmvyijmyseeoj.supabase.co:5432/postgres
-      
-      # Diese werden vom start-n8n.sh Script automatisch gemappt:
-      # DATABASE_URL = SUPABASE_DB_URL (wird im Script gesetzt)
-      # DB_POSTGRESDB_CONNECTION_STRING = SUPABASE_DB_URL (wird im Script gesetzt)
-
-      # Supabase Optional (falls du Supabase Storage/Auth nutzt)
-      - key: SUPABASE_URL
-        sync: false
-      - key: SUPABASE_ANON_KEY
-        sync: false
-      - key: SUPABASE_SERVICE_KEY
-        sync: false
+        value: sqlite
 
       # AI APIs (Optional)
       - key: OPENAI_API_KEY
