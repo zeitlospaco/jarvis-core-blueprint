@@ -16,6 +16,7 @@ services:
       sizeGB: 1
 
     envVars:
+      # Host & Port Configuration
       - key: N8N_HOST
         value: 0.0.0.0
       - key: N8N_PORT
@@ -25,7 +26,7 @@ services:
       - key: N8N_LISTEN_ADDRESS
         value: 0.0.0.0
 
-      # Authentication / encryption
+      # Authentication & Encryption
       - key: N8N_BASIC_AUTH_ACTIVE
         value: "true"
       - key: N8N_BASIC_AUTH_USER
@@ -35,17 +36,21 @@ services:
       - key: N8N_ENCRYPTION_KEY
         generateValue: true
 
-      # Database - WICHTIG: SUPABASE_DB_URL wird zu DATABASE_URL gemappt
+      # Database Configuration - KRITISCH!
+      # Setze alle drei Variablen auf den gleichen Wert
       - key: DB_TYPE
         value: postgresdb
+      
+      # WICHTIG: Hier deine Supabase Connection String eintragen!
+      # Format: postgresql://postgres:PASSWORD@db.PROJECT.supabase.co:5432/postgres
       - key: SUPABASE_DB_URL
-        sync: false
-      - key: DATABASE_URL
-        value: ${SUPABASE_DB_URL}
-      - key: DB_POSTGRESDB_CONNECTION_STRING
-        value: ${SUPABASE_DB_URL}
+        sync: false  # Manuelle Eingabe erforderlich
+      
+      # Diese werden vom start-n8n.sh Script automatisch gemappt:
+      # DATABASE_URL = SUPABASE_DB_URL (wird im Script gesetzt)
+      # DB_POSTGRESDB_CONNECTION_STRING = SUPABASE_DB_URL (wird im Script gesetzt)
 
-      # Supabase Configuration
+      # Supabase Optional (falls du Supabase Storage/Auth nutzt)
       - key: SUPABASE_URL
         sync: false
       - key: SUPABASE_ANON_KEY
@@ -53,7 +58,7 @@ services:
       - key: SUPABASE_SERVICE_KEY
         sync: false
 
-      # AI APIs
+      # AI APIs (Optional)
       - key: OPENAI_API_KEY
         sync: false
       - key: ANTHROPIC_API_KEY
@@ -63,11 +68,11 @@ services:
       - key: PINECONE_ENV
         value: us-east1-gcp
 
-      # LangChain
+      # LangChain (Optional)
       - key: LANGCHAIN_API_KEY
         sync: false
       
-      # SMTP
+      # SMTP (Optional)
       - key: SMTP_HOST
         sync: false
       - key: SMTP_PORT
