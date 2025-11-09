@@ -41,10 +41,10 @@ services:
       - key: DB_TYPE
         value: postgresdb
       
-      # WICHTIG: Hier deine Supabase Connection String eintragen!
+      # WICHTIG: Hier deine Supabase Connection String!
       # Format: postgresql://postgres:PASSWORD@db.PROJECT.supabase.co:5432/postgres
       - key: SUPABASE_DB_URL
-        sync: false  # Manuelle Eingabe erforderlich
+        value: postgresql://postgres:vOlka23nsupabase@db.ydocvzfqmvyijmyseeoj.supabase.co:5432/postgres
       
       # Diese werden vom start-n8n.sh Script automatisch gemappt:
       # DATABASE_URL = SUPABASE_DB_URL (wird im Script gesetzt)
