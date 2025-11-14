@@ -83,6 +83,9 @@ yarn-error.log*
 *.p12
 secrets/
 
+# MCP Server Configuration (contains API keys and tokens)
+.mcp.json
+
 # Testing
 .coverage
 htmlcov/
